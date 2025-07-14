@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ObjectGeneratorSafe } from "./safe-generator";
 import { EvaluationType, PromptPair } from "../types";
 import { logDebug } from '../logging';
+import { LLM_PROVIDER } from "../config"; // 导入LLM_PROVIDER
 
 export const MAX_URLS_PER_STEP = 5
 export const MAX_QUERIES_PER_STEP = 5
@@ -102,9 +103,17 @@ export class Schemas {
 
 
   async setLanguage(query: string) {
-    if (languageISO6391Map[query]) {
+    // 如果是DeepSeek模型，直接设置为中文
+    if (LLM_PROVIDER === 'deepseek') {
       this.languageCode = 'zh';
-      this.languageStyle = 'casual Chinese with a hint of curiosity';
+      this.languageStyle = 'formal technical Chinese with precise terminology and structured reporting style';
+      logDebug(`Using DeepSeek model, forcing language to: ${this.languageCode} -> ${this.languageStyle}`);
+      return;
+    }
+    
+    if (languageISO6391Map[query]) {
+      this.languageCode = query;
+      this.languageStyle = `formal technical ${languageISO6391Map[query]} with precise terminology and structured reporting style`;
       return;
     }
     const generator = new ObjectGeneratorSafe();

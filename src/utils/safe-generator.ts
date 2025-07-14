@@ -154,7 +154,7 @@ export class ObjectGeneratorSafe {
         messages,
         maxTokens: getToolConfig(model).maxTokens,
         temperature: getToolConfig(model).temperature,
-        mode: 'json'
+        mode: 'json' // 确保始终使用json模式
       });
 
       this.tokenTracker.trackUsage(model, result.usage);
@@ -188,7 +188,7 @@ export class ObjectGeneratorSafe {
             if (NoObjectGeneratedError.isInstance(parseError)) {
               failedOutput = (parseError as any).text;
               // find last `"url":` appear in the string, which is the source of the problem
-              failedOutput = failedOutput.slice(0, Math.min(failedOutput.lastIndexOf('"url":'), 8000));
+              failedOutput = failedOutput.slice(0, Math.min(failedOutput.lastIndexOf('"url":') >= 0 ? failedOutput.lastIndexOf('"url":') : failedOutput.length, 8000));
             }
 
             // Create a distilled version of the schema without descriptions
@@ -199,7 +199,7 @@ export class ObjectGeneratorSafe {
               schema: distilledSchema,
               prompt: `Following the given JSON schema, extract the field from below: \n\n ${failedOutput}`,
               temperature: getToolConfig('fallback').temperature,
-              mode: 'json'
+              mode: 'json' // 确保始终使用json模式
             });
 
             this.tokenTracker.trackUsage('fallback', fallbackResult.usage); // Track against fallback model

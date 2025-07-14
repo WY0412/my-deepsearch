@@ -7,6 +7,8 @@
     "JINA_API_KEY": "",
     "BRAVE_API_KEY": "",
     "SERPER_API_KEY": "",
+    "DEEPSEEK_API_KEY": "",
+    "DEEPSEEK_BASE_URL": "",
     "DEFAULT_MODEL_NAME": ""
   },
   "defaults": {
@@ -19,6 +21,12 @@
       "createClient": "createGoogleGenerativeAI"
     },
     "openai": {
+      "createClient": "createOpenAI",
+      "clientConfig": {
+        "compatibility": "strict"
+      }
+    },
+    "deepseek": {
       "createClient": "createOpenAI",
       "clientConfig": {
         "compatibility": "strict"
@@ -67,6 +75,38 @@
     "openai": {
       "default": {
         "model": "gpt-4o-mini",
+        "temperature": 0,
+        "maxTokens": 8000
+      },
+      "tools": {
+        "coder": {
+          "temperature": 0.7
+        },
+        "researchPlanner": {},
+        "evaluator": {},
+        "errorAnalyzer": {},
+        "queryRewriter": {
+          "temperature": 0.1
+        },
+        "serpCluster": {},
+        "agent": {
+          "temperature": 0.7
+        },
+        "agentBeastMode": {
+          "temperature": 0.7
+        },
+        "fallback": {
+          "temperature": 0
+        },
+        "finalizer": {},
+        "reducer": {
+          "maxTokens": 16000
+        }
+      }
+    },
+    "deepseek": {
+      "default": {
+        "model": "deepseek-chat",
         "temperature": 0,
         "maxTokens": 8000
       },

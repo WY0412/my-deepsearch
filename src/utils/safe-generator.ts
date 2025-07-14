@@ -154,6 +154,7 @@ export class ObjectGeneratorSafe {
         messages,
         maxTokens: getToolConfig(model).maxTokens,
         temperature: getToolConfig(model).temperature,
+        mode: 'json'
       });
 
       this.tokenTracker.trackUsage(model, result.usage);
@@ -198,6 +199,7 @@ export class ObjectGeneratorSafe {
               schema: distilledSchema,
               prompt: `Following the given JSON schema, extract the field from below: \n\n ${failedOutput}`,
               temperature: getToolConfig('fallback').temperature,
+              mode: 'json'
             });
 
             this.tokenTracker.trackUsage('fallback', fallbackResult.usage); // Track against fallback model

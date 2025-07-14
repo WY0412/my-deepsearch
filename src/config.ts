@@ -8,7 +8,7 @@ import { logInfo, logError, logDebug, logWarning } from './logging';
 dotenv.config();
 
 // Types
-export type LLMProvider = 'openai' | 'gemini' | 'vertex';
+export type LLMProvider = 'openai' | 'gemini' | 'vertex' | 'deepseek';
 export type ToolName = keyof typeof configJson.models.gemini.tools;
 
 // Type definitions for our config structure
@@ -45,6 +45,8 @@ export const OPENAI_API_KEY = env.OPENAI_API_KEY;
 export const JINA_API_KEY = env.JINA_API_KEY;
 export const BRAVE_API_KEY = env.BRAVE_API_KEY;
 export const SERPER_API_KEY = env.SERPER_API_KEY;
+export const DEEPSEEK_API_KEY = env.DEEPSEEK_API_KEY;
+export const DEEPSEEK_BASE_URL = env.DEEPSEEK_BASE_URL;
 export const SEARCH_PROVIDER = configJson.defaults.search_provider;
 export const STEP_SLEEP = configJson.defaults.step_sleep;
 
@@ -58,7 +60,7 @@ export const LLM_PROVIDER: LLMProvider = (() => {
 })();
 
 function isValidProvider(provider: string): provider is LLMProvider {
-  return provider === 'openai' || provider === 'gemini' || provider === 'vertex';
+  return provider === 'openai' || provider === 'gemini' || provider === 'vertex' || provider === 'deepseek';
 }
 
 interface ToolConfig {
@@ -112,6 +114,25 @@ export function getModel(toolName: ToolName) {
     return createOpenAI(opt)(config.model);
   }
 
+  if (LLM_PROVIDER === 'deepseek') {
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error('DEEPSEEK_API_KEY not found');
+    }
+
+    const opt: OpenAIProviderSettings = {
+      apiKey: DEEPSEEK_API_KEY,
+      compatibility: providerConfig?.clientConfig?.compatibility
+    };
+
+    if (DEEPSEEK_BASE_URL) {
+      opt.baseURL = DEEPSEEK_BASE_URL;
+    } else {
+      opt.baseURL = 'https://api.deepseek.com/v1';
+    }
+
+    return createOpenAI(opt)(config.model);
+  }
+
   if (LLM_PROVIDER === 'vertex') {
     const createVertex = require('@ai-sdk/google-vertex').createVertex;
     return createVertex({ project: process.env.GCLOUD_PROJECT, ...providerConfig?.clientConfig })(config.model);
@@ -127,6 +148,7 @@ export function getModel(toolName: ToolName) {
 // Validate required environment variables
 if (LLM_PROVIDER === 'gemini' && !GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not found");
 if (LLM_PROVIDER === 'openai' && !OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not found");
+if (LLM_PROVIDER === 'deepseek' && !DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY not found");
 if (!JINA_API_KEY) throw new Error("JINA_API_KEY not found");
 
 // Log all configurations
@@ -135,8 +157,11 @@ const configSummary = {
     name: LLM_PROVIDER,
     model: LLM_PROVIDER === 'openai'
       ? configJson.models.openai.default.model
-      : configJson.models.gemini.default.model,
-    ...(LLM_PROVIDER === 'openai' && { baseUrl: OPENAI_BASE_URL })
+      : LLM_PROVIDER === 'deepseek'
+        ? configJson.models.deepseek.default.model
+        : configJson.models.gemini.default.model,
+    ...(LLM_PROVIDER === 'openai' && { baseUrl: OPENAI_BASE_URL }),
+    ...(LLM_PROVIDER === 'deepseek' && { baseUrl: DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1' })
   },
   search: {
     provider: SEARCH_PROVIDER

@@ -103,8 +103,8 @@ export class Schemas {
 
   async setLanguage(query: string) {
     if (languageISO6391Map[query]) {
-      this.languageCode = query;
-      this.languageStyle = `formal ${languageISO6391Map[query]}`;
+      this.languageCode = 'zh';
+      this.languageStyle = 'casual Chinese with a hint of curiosity';
       return;
     }
     const generator = new ObjectGeneratorSafe();

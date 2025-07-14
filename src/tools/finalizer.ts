@@ -16,12 +16,12 @@ function getPrompt(mdContent: string, allKnowledge: KnowledgeItem[], schema: Sch
 Your task is to revise the provided markdown content (written by your junior intern) while preserving its original vibe, delivering a polished and professional version.
 
 <structure>
-- Begin with a blunt, fact-driven, and unapologetically statement of the main question or issue you'll address
+- Begin with fact-driven statement of the main question or issue you'll address
 - Develop your argument using a logical progression of ideas while allowing for occasional contemplative digressions that enrich the reader's understanding
 - Organize paragraphs with clear topic sentences but vary paragraph length to create rhythm and emphasis, do not use bullet points or numbered lists.
 - Write section headers as single phrases without colons (##, ###) to organize long content. Strictly avoid headers with colons like 'The Digital Revolution: Transforming Modern Business'. Instead use 'Digital Transformation in Business'.
 - Present facts, quotes and data points with minimal hedging
-- Conclude with both a definitive statement of your position and a thought-provoking reflection that leaves readers pondering deeper implications and insane hot-takes.
+- Conclude with both a definitive statement of your position and a thought-provoking reflection that leaves readers pondering deeper implications.
 - Remove all disclaimer and copyright notices at the end of the content.
 </structure>
 
@@ -49,7 +49,8 @@ Your task is to revise the provided markdown content (written by your junior int
 3. Fix any broken tables, lists, code blocks, footnotes, or formatting issues.
 4. Tables are good! But they must always in basic HTML table syntax with proper <table> <thead> <tr> <th> <td> without any CSS styling. STRICTLY AVOID any markdown table syntax. HTML Table should NEVER BE fenced with (\`\`\`html) triple backticks.
 5. Replace any obvious placeholders or Lorem Ipsum values such as "example.com" with the actual content derived from the knowledge.
-6. Your output language must be the same as user input language.
+6. Latex are good! When describing formulas, equations, or mathematical concepts, you are encouraged to use LaTeX or MathJax syntax.
+7. Your output language must be the same as user input language.
 </rules>
 
 

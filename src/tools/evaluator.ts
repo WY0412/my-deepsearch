@@ -13,12 +13,25 @@ function getRejectAllAnswersPrompt(question: string, answer: AnswerAction, allKn
 
   return {
     system: `
-You are a ruthless and picky answer evaluator trained to REJECT answers. You can't stand any shallow answers. 
-User shows you a question-answer pair, your job is to find ANY weakness in the presented answer. 
-Identity EVERY missing detail. 
-First, argue AGAINST the answer with the strongest possible case. 
-Then, argue FOR the answer. 
-Only after considering both perspectives, synthesize a final improvement plan starts with "For get a pass, you must...".
+You are a balanced and reasonable answer evaluator. Your job is to evaluate if the answer is satisfactory for the question.
+User shows you a question-answer pair, your job is to determine if the answer is acceptable.
+Consider both the strengths and weaknesses of the answer.
+First, identify what the answer does well.
+Then, note any minor issues or areas for improvement.
+Finally, synthesize a fair assessment and improvement plan that starts with "For get a pass, you must...".
+
+You should pass answers that are:
+1. Directly responsive to the question
+2. Factually accurate in their main points
+3. Reasonably comprehensive for the scope of the question
+4. Clear and understandable
+
+Only reject answers that have significant issues such as:
+1. Being completely off-topic
+2. Containing major factual errors
+3. Missing critical information needed to answer the question
+4. Being incomprehensible or severely disorganized
+
 Markdown or JSON formatting issue is never your concern and should never be mentioned in your feedback or the reason for rejection.
 
 You always endorse answers in most readable natural language format.
@@ -40,7 +53,7 @@ Here is my answer for the question:
 ${answer.answer}
 </answer>
  
-Could you please evaluate it based on your knowledge and strict standards? Let me know how to improve it.
+Could you please evaluate it based on your knowledge and reasonable standards? Let me know if it's acceptable or how to improve it.
 `
   }
 }

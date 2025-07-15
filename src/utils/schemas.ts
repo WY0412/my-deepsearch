@@ -104,10 +104,10 @@ export class Schemas {
 
   async setLanguage(query: string) {
     // 如果是DeepSeek模型，直接设置为中文
-    if (LLM_PROVIDER === 'deepseek') {
+    if (LLM_PROVIDER === 'deepseek' || LLM_PROVIDER === 'sophnet') {
       this.languageCode = 'zh';
       this.languageStyle = 'formal technical Chinese with precise terminology and structured reporting style';
-      logDebug(`Using DeepSeek model, forcing language to: ${this.languageCode} -> ${this.languageStyle}`);
+      logDebug(`Using DeepSeek or SophNet model, forcing language to: ${this.languageCode} -> ${this.languageStyle}`);
       return;
     }
     

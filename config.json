@@ -9,6 +9,8 @@
     "SERPER_API_KEY": "",
     "DEEPSEEK_API_KEY": "",
     "DEEPSEEK_BASE_URL": "",
+    "SOPHNET_API_KEY": "",
+    "SOPHNET_BASE_URL": "https://dev-platform.fastmodels.cn/api/open-apis/v1",
     "DEFAULT_MODEL_NAME": ""
   },
   "defaults": {
@@ -27,6 +29,12 @@
       }
     },
     "deepseek": {
+      "createClient": "createOpenAI",
+      "clientConfig": {
+        "compatibility": "strict"
+      }
+    },
+    "sophnet": {
       "createClient": "createOpenAI",
       "clientConfig": {
         "compatibility": "strict"
@@ -107,6 +115,38 @@
     "deepseek": {
       "default": {
         "model": "deepseek-chat",
+        "temperature": 0,
+        "maxTokens": 8000
+      },
+      "tools": {
+        "coder": {
+          "temperature": 0.7
+        },
+        "researchPlanner": {},
+        "evaluator": {},
+        "errorAnalyzer": {},
+        "queryRewriter": {
+          "temperature": 0.1
+        },
+        "serpCluster": {},
+        "agent": {
+          "temperature": 0.7
+        },
+        "agentBeastMode": {
+          "temperature": 0.7
+        },
+        "fallback": {
+          "temperature": 0
+        },
+        "finalizer": {},
+        "reducer": {
+          "maxTokens": 16000
+        }
+      }
+    },
+    "sophnet": {
+      "default": {
+        "model": "DeepSeek-v3",
         "temperature": 0,
         "maxTokens": 8000
       },

@@ -4,11 +4,12 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI, OpenAIProviderSettings } from '@ai-sdk/openai';
 import configJson from '../config.json';
 import { logInfo, logError, logDebug, logWarning } from './logging';
+
 // Load environment variables
 dotenv.config();
 
 // Types
-export type LLMProvider = 'openai' | 'gemini' | 'vertex' | 'deepseek';
+export type LLMProvider = 'openai' | 'gemini' | 'vertex' | 'deepseek' | 'sophnet';
 export type ToolName = keyof typeof configJson.models.gemini.tools;
 
 // Type definitions for our config structure
@@ -47,6 +48,8 @@ export const BRAVE_API_KEY = env.BRAVE_API_KEY;
 export const SERPER_API_KEY = env.SERPER_API_KEY;
 export const DEEPSEEK_API_KEY = env.DEEPSEEK_API_KEY;
 export const DEEPSEEK_BASE_URL = env.DEEPSEEK_BASE_URL;
+export const SOPHNET_API_KEY = env.SOPHNET_API_KEY || '';
+export const SOPHNET_BASE_URL = env.SOPHNET_BASE_URL || 'https://dev-platform.fastmodels.cn/api/open-apis/v1';
 export const SEARCH_PROVIDER = configJson.defaults.search_provider;
 export const STEP_SLEEP = configJson.defaults.step_sleep;
 
@@ -60,7 +63,7 @@ export const LLM_PROVIDER: LLMProvider = (() => {
 })();
 
 function isValidProvider(provider: string): provider is LLMProvider {
-  return provider === 'openai' || provider === 'gemini' || provider === 'vertex' || provider === 'deepseek';
+  return provider === 'openai' || provider === 'gemini' || provider === 'vertex' || provider === 'deepseek' || provider === 'sophnet';
 }
 
 interface ToolConfig {
@@ -77,7 +80,7 @@ interface ToolOverrides {
 
 // Get tool configuration
 export function getToolConfig(toolName: ToolName): ToolConfig {
-  const providerConfig = configJson.models[LLM_PROVIDER === 'vertex' ? 'gemini' : LLM_PROVIDER];
+  const providerConfig = configJson.models[LLM_PROVIDER === 'vertex' ? 'gemini' : LLM_PROVIDER] || configJson.models.gemini;
   const defaultConfig = providerConfig.default;
   const toolOverrides = providerConfig.tools[toolName] as ToolOverrides;
 
@@ -133,6 +136,25 @@ export function getModel(toolName: ToolName) {
     return createOpenAI(opt)(config.model);
   }
 
+  if (LLM_PROVIDER === 'sophnet') {
+    if (!SOPHNET_API_KEY) {
+      throw new Error('SOPHNET_API_KEY not found');
+    }
+
+    const opt: OpenAIProviderSettings = {
+      apiKey: SOPHNET_API_KEY,
+      compatibility: providerConfig?.clientConfig?.compatibility
+    };
+
+    if (SOPHNET_BASE_URL) {
+      opt.baseURL = SOPHNET_BASE_URL;
+    } else {
+      opt.baseURL = 'https://dev-platform.fastmodels.cn/api/open-apis/v1';
+    }
+    
+    return createOpenAI(opt)(config.model);
+  }
+
   if (LLM_PROVIDER === 'vertex') {
     const createVertex = require('@ai-sdk/google-vertex').createVertex;
     return createVertex({ project: process.env.GCLOUD_PROJECT, ...providerConfig?.clientConfig })(config.model);
@@ -149,6 +171,7 @@ export function getModel(toolName: ToolName) {
 if (LLM_PROVIDER === 'gemini' && !GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not found");
 if (LLM_PROVIDER === 'openai' && !OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not found");
 if (LLM_PROVIDER === 'deepseek' && !DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY not found");
+if (LLM_PROVIDER === 'sophnet' && !SOPHNET_API_KEY) throw new Error("SOPHNET_API_KEY not found");
 if (!JINA_API_KEY) throw new Error("JINA_API_KEY not found");
 
 // Log all configurations
@@ -159,15 +182,18 @@ const configSummary = {
       ? configJson.models.openai.default.model
       : LLM_PROVIDER === 'deepseek'
         ? configJson.models.deepseek.default.model
-        : configJson.models.gemini.default.model,
+        : LLM_PROVIDER === 'sophnet'
+          ? configJson.models.sophnet?.default.model || 'DeepSeek-v3'
+          : configJson.models.gemini.default.model,
     ...(LLM_PROVIDER === 'openai' && { baseUrl: OPENAI_BASE_URL }),
-    ...(LLM_PROVIDER === 'deepseek' && { baseUrl: DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1' })
+    ...(LLM_PROVIDER === 'deepseek' && { baseUrl: DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1' }),
+    ...(LLM_PROVIDER === 'sophnet' && { baseUrl: SOPHNET_BASE_URL })
   },
   search: {
     provider: SEARCH_PROVIDER
   },
   tools: Object.fromEntries(
-    Object.keys(configJson.models[LLM_PROVIDER === 'vertex' ? 'gemini' : LLM_PROVIDER].tools).map(name => [
+    Object.keys(configJson.models[LLM_PROVIDER === 'vertex' ? 'gemini' : LLM_PROVIDER]?.tools || configJson.models.gemini.tools).map(name => [
       name,
       getToolConfig(name as ToolName)
     ])

@@ -198,6 +198,9 @@ const configSummary = {
       getToolConfig(name as ToolName)
     ])
   ),
+  defaults: {
+    stepSleep: STEP_SLEEP
+  }
 };
 
 logInfo('Configuration loaded:', configSummary);

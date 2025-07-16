@@ -13,47 +13,51 @@ function getRejectAllAnswersPrompt(question: string, answer: AnswerAction, allKn
 
   return {
     system: `
-You are a balanced and reasonable answer evaluator. Your job is to evaluate if the answer is satisfactory for the question.
-User shows you a question-answer pair, your job is to determine if the answer is acceptable.
-Consider both the strengths and weaknesses of the answer.
-First, identify what the answer does well.
-Then, note any minor issues or areas for improvement.
-Finally, synthesize a fair assessment and improvement plan that starts with "For get a pass, you must...".
+您是一位公正客观的回答评估专家。您的工作是评估回答是否满足问题的要求。
+用户向您展示了一对问题-回答，您的任务是确定回答是否可接受。
+请全面考虑回答的优点和不足。
+首先，指出回答做得好的方面。
+然后，指出任何需要改进的小问题或领域。
+最后，综合给出公正的评估和改进计划，以"为了通过评估，您必须..."开头。
 
-You should pass answers that are:
-1. Directly responsive to the question
-2. Factually accurate in their main points
-3. Reasonably comprehensive for the scope of the question
-4. Clear and understandable
+您应该通过符合以下条件的回答：
+1. 直接回应问题
+2. 主要观点事实准确
+3. 对问题范围内容覆盖合理全面
+4. 清晰易懂
 
-Only reject answers that have significant issues such as:
-1. Being completely off-topic
-2. Containing major factual errors
-3. Missing critical information needed to answer the question
-4. Being incomprehensible or severely disorganized
+只有在存在以下重大问题时才拒绝回答：
+1. 完全偏离主题
+2. 包含重大事实错误
+3. 缺少回答问题所需的关键信息
+4. 不可理解或严重缺乏组织结构
 
-Markdown or JSON formatting issue is never your concern and should never be mentioned in your feedback or the reason for rejection.
+Markdown或JSON格式问题永远不应该成为您关注的重点，也不应该在您的反馈或拒绝理由中提及。
 
-You always endorse answers in most readable natural language format.
-If multiple sections have very similar structure, suggest another presentation format like a table to make the content more readable.
-Do not encourage deeply nested structure, flatten it into natural language sections/paragraphs or even tables. Every table should use HTML table syntax <table> <thead> <tr> <th> <td> without any CSS styling.
+您始终应该支持使用最易读的自然语言格式的回答。
+如果多个部分具有非常相似的结构，建议使用表格等其他呈现格式使内容更易读。
+不要鼓励使用深度嵌套结构，将其展平为自然语言部分/段落甚至表格。表格应使用标准Markdown表格语法，例如：
 
-The following knowledge items are provided for your reference. Note that some of them may not be directly related to the question/answer user provided, but may give some subtle hints and insights:
+| 列1 | 列2 | 列3 |
+| --- | --- | --- |
+| 数据1 | 数据2 | 数据3 |
+
+以下知识项目供您参考。请注意，其中一些可能与用户提供的问题/回答没有直接关系，但可能提供一些微妙的提示和见解：
 ${KnowledgeStr.join('\n\n')}
 `,
     user: `
-Dear reviewer, I need your feedback on the following question-answer pair:
+尊敬的评审专家，我需要您对以下问题-回答对进行评估：
 
-<question>
+<问题>
 ${question}
-</question>
+</问题>
 
-Here is my answer for the question:
-<answer>
+以下是我对该问题的回答：
+<回答>
 ${answer.answer}
-</answer>
+</回答>
  
-Could you please evaluate it based on your knowledge and reasonable standards? Let me know if it's acceptable or how to improve it.
+请根据您的知识和合理标准对其进行评估。请告诉我它是否可接受，或者如何改进它。
 `
   }
 }
@@ -61,172 +65,172 @@ Could you please evaluate it based on your knowledge and reasonable standards? L
 
 function getDefinitivePrompt(question: string, answer: string): PromptPair {
   return {
-    system: `You are an evaluator of answer definitiveness. Analyze if the given answer provides a definitive response or not.
+    system: `您是回答确定性的评估专家。请分析给定的回答是否提供了明确的响应。
 
-<rules>
-First, if the answer is not a direct response to the question, it must return false.
+<规则>
+首先，如果回答不是对问题的直接回应，必须返回false。
 
-Definitiveness means providing a clear, confident response. The following approaches are considered definitive:
-  1. Direct, clear statements that address the question
-  2. Comprehensive answers that cover multiple perspectives or both sides of an issue
-  3. Answers that acknowledge complexity while still providing substantive information
-  4. Balanced explanations that present pros and cons or different viewpoints
+确定性意味着提供清晰、自信的回应。以下方法被视为确定性的：
+  1. 直接、清晰的陈述，解决了问题
+  2. 全面的回答，涵盖多个视角或问题的各个方面
+  3. 承认复杂性的同时仍提供实质性信息的回答
+  4. 平衡的解释，呈现利弊或不同观点
 
-The following types of responses are NOT definitive and must return false:
-  1. Expressions of personal uncertainty: "I don't know", "not sure", "might be", "probably"
-  2. Lack of information statements: "doesn't exist", "lack of information", "could not find"
-  3. Inability statements: "I cannot provide", "I am unable to", "we cannot"
-  4. Negative statements that redirect: "However, you can...", "Instead, try..."
-  5. Non-answers that suggest alternatives without addressing the original question
-  
-Note: A definitive answer can acknowledge legitimate complexity or present multiple viewpoints as long as it does so with confidence and provides substantive information directly addressing the question.
-</rules>
+以下类型的回应不具有确定性，必须返回false：
+  1. 表达个人不确定性："我不知道"、"不确定"、"可能是"、"或许"
+  2. 缺乏信息的陈述："不存在"、"缺乏信息"、"找不到"
+  3. 无能力陈述："我无法提供"、"我无法"、"我们不能"
+  4. 重定向的否定陈述："然而，您可以..."、"相反，尝试..."
+  5. 不回答问题而建议替代方案的回应
 
-<examples>
-Question: "What are the system requirements for running Python 3.9?"
-Answer: "I'm not entirely sure, but I think you need a computer with some RAM."
-Evaluation: {
-  "think": "The answer contains uncertainty markers like 'not entirely sure' and 'I think', making it non-definitive."
+注意：确定性回答可以承认合理的复杂性或呈现多种观点，只要它以自信的方式这样做，并直接针对问题提供实质性信息。
+</规则>
+
+<示例>
+问题："运行Python 3.9的系统要求是什么？"
+回答："我不太确定，但我认为你需要一台有一些RAM的电脑。"
+评估：{
+  "think": "回答包含不确定性标记，如'不太确定'和'我认为'，使其不具确定性。"
   "pass": false,
 }
 
-Question: "What are the system requirements for running Python 3.9?"
-Answer: "Python 3.9 requires Windows 7 or later, macOS 10.11 or later, or Linux."
-Evaluation: {
-  "think": "The answer makes clear, definitive statements without uncertainty markers or ambiguity."
+问题："运行Python 3.9的系统要求是什么？"
+回答："Python 3.9需要Windows 7或更高版本，macOS 10.11或更高版本，或Linux。"
+评估：{
+  "think": "回答做出清晰、明确的陈述，没有不确定性标记或模糊性。"
   "pass": true,
 }
 
-Question: "Who will be the president of the United States in 2032?"
-Answer: "I cannot predict the future, it depends on the election results."
-Evaluation: {
-  "think": "The answer contains a statement of inability to predict the future, making it non-definitive."
+问题："2032年谁将成为美国总统？"
+回答："我无法预测未来，这取决于选举结果。"
+评估：{
+  "think": "回答包含无法预测未来的陈述，使其不具确定性。"
   "pass": false,
 }
 
-Question: "Who is the sales director at Company X?"
-Answer: "I cannot provide the name of the sales director, but you can contact their sales team at sales@companyx.com"
-Evaluation: {
-  "think": "The answer starts with 'I cannot provide' and redirects to an alternative contact method instead of answering the original question."
+问题："X公司的销售总监是谁？"
+回答："我无法提供销售总监的姓名，但您可以通过sales@companyx.com联系他们的销售团队"
+评估：{
+  "think": "回答以'我无法提供'开头，并重定向到替代联系方式，而不是回答原始问题。"
   "pass": false,
 }
 
-Question: "what is the twitter account of jina ai's founder?"
-Answer: "The provided text does not contain the Twitter account of Jina AI's founder."
-Evaluation: {
-  "think": "The answer indicates a lack of information rather than providing a definitive response."
+问题："jina ai创始人的twitter账号是什么？"
+回答："提供的文本不包含Jina AI创始人的Twitter账号。"
+评估：{
+  "think": "回答表明缺乏信息，而不是提供明确的回应。"
   "pass": false,
 }
 
-Question: "量子コンピュータの計算能力を具体的に測定する方法は何ですか？"
-Answer: "量子コンピュータの計算能力は量子ビット（キュービット）の数、ゲート忠実度、コヒーレンス時間で測定されます。"
-Evaluation: {
-  "think": "The answer provides specific, definitive metrics for measuring quantum computing power without uncertainty markers or qualifications."
+问题："量子コンピュータの計算能力を具体的に測定する方法は何ですか？"
+回答："量子コンピュータの計算能力は量子ビット（キュービット）の数、ゲート忠実度、コヒーレンス時間で測定されます。"
+评估：{
+  "think": "回答提供了具体、明确的量子计算能力测量指标，没有不确定性标记或限定。"
   "pass": true,
 }
 
-Question: "如何证明哥德巴赫猜想是正确的？"
-Answer: "目前尚无完整证明，但2013年张益唐证明了存在无穷多对相差不超过7000万的素数，后来这个界被缩小到246。"
-Evaluation: {
-  "think": "The answer begins by stating no complete proof exists, which is a non-definitive response, and then shifts to discussing a related but different theorem about bounded gaps between primes."
+问题："如何证明哥德巴赫猜想是正确的？"
+回答："目前尚无完整证明，但2013年张益唐证明了存在无穷多对相差不超过7000万的素数，后来这个界被缩小到246。"
+评估：{
+  "think": "回答以陈述没有完整证明开始，这是一个非确定性回应，然后转向讨论相关但不同的关于素数间有界差距的定理。"
   "pass": false,
 }
 
-Question: "Wie kann man mathematisch beweisen, dass P ≠ NP ist?"
-Answer: "Ein Beweis für P ≠ NP erfordert, dass man zeigt, dass mindestens ein NP-vollständiges Problem nicht in polynomieller Zeit lösbar ist. Dies könnte durch Diagonalisierung, Schaltkreiskomplexität oder relativierende Barrieren erreicht werden."
-Evaluation: {
-  "think": "The answer provides concrete mathematical approaches to proving P ≠ NP without uncertainty markers, presenting definitive methods that could be used."
+问题："Wie kann man mathematisch beweisen, dass P ≠ NP ist?"
+回答："Ein Beweis für P ≠ NP erfordert, dass man zeigt, dass mindestens ein NP-vollständiges Problem nicht in polynomieller Zeit lösbar ist. Dies könnte durch Diagonalisierung, Schaltkreiskomplexität oder relativierende Barrieren erreicht werden."
+评估：{
+  "think": "回答提供了证明P≠NP的具体数学方法，没有不确定性标记，呈现了可以使用的明确方法。"
   "pass": true,
 }
 
-Question: "Is universal healthcare a good policy?"
-Answer: "Universal healthcare has both advantages and disadvantages. Proponents argue it provides coverage for all citizens, reduces administrative costs, and leads to better public health outcomes. Critics contend it may increase wait times, raise taxes, and potentially reduce innovation in medical treatments. Most developed nations have implemented some form of universal healthcare with varying structures and degrees of coverage."
-Evaluation: {
-  "think": "The answer confidently presents both sides of the debate with specific points for each perspective. It provides substantive information directly addressing the question without expressions of personal uncertainty."
+问题："全民医疗保健是一项好政策吗？"
+回答："全民医疗保健既有优点也有缺点。支持者认为它为所有公民提供保障，降低行政成本，并导致更好的公共健康结果。批评者则认为它可能增加等待时间，提高税收，并可能减少医疗治疗的创新。大多数发达国家已经实施了某种形式的全民医疗保健，结构和覆盖程度各不相同。"
+评估：{
+  "think": "回答自信地呈现了辩论的双方观点，每个视角都有具体的要点。它直接回应问题，提供实质性信息，没有个人不确定性表达。"
   "pass": true,
 }
 
-Question: "Should companies use AI for hiring decisions?"
-Answer: "There are compelling arguments on both sides of this issue. Companies using AI in hiring can benefit from reduced bias in initial screening, faster processing of large applicant pools, and potentially better matches based on skills assessment. However, these systems can also perpetuate historical biases in training data, may miss nuanced human qualities, and raise privacy concerns. The effectiveness depends on careful implementation, human oversight, and regular auditing of these systems."
-Evaluation: {
-  "think": "The answer provides a balanced, detailed examination of both perspectives on AI in hiring. It acknowledges complexity while delivering substantive information with confidence."
+问题："公司应该使用AI进行招聘决策吗？"
+回答："这个问题的两方面都有令人信服的论据。公司在招聘中使用AI可以受益于初步筛选中的偏见减少、大型申请者池的更快处理，以及可能基于技能评估的更好匹配。然而，这些系统也可能延续训练数据中的历史偏见，可能忽略微妙的人类品质，并引发隐私问题。其有效性取决于谨慎实施、人类监督和对这些系统的定期审核。"
+评估：{
+  "think": "回答提供了关于招聘中AI使用的平衡、详细的两方面观点。它承认复杂性的同时以自信的方式提供实质性信息。"
   "pass": true,
 }
 
-Question: "Is nuclear energy safe?"
-Answer: "I'm not an expert on energy policy, so I can't really say if nuclear energy is safe or not. There have been some accidents but also many successful plants."
-Evaluation: {
-  "think": "The answer contains explicit expressions of personal uncertainty ('I'm not an expert', 'I can't really say') and provides only vague information without substantive content."
+问题："核能安全吗？"
+回答："我不是能源政策专家，所以我不能真正说核能是否安全。曾发生过一些事故，但也有许多成功的电厂。"
+评估：{
+  "think": "回答包含明确的个人不确定性表达（'我不是专家'，'我不能真正说'），并且只提供模糊信息，没有实质性内容。"
   "pass": false,
 }
-</examples>`,
+</示例>`,
     user: `
-Question: ${question}
-Answer: ${answer}`
+问题: ${question}
+回答: ${answer}`
   };
 }
 
 function getFreshnessPrompt(question: string, answer: AnswerAction, currentTime: string): PromptPair {
   return {
-    system: `You are an evaluator that analyzes if answer content is likely outdated based on mentioned dates (or implied datetime) and current system time: ${currentTime}
+    system: `您是一位评估专家，负责分析回答内容是否可能已过时，基于提到的日期（或隐含的日期时间）和当前系统时间：${currentTime}
 
-<rules>
-Question-Answer Freshness Checker Guidelines
+<规则>
+问答新鲜度检查指南
 
-| QA Type                  | Max Age (Days) | Notes                                                                 |
-|--------------------------|--------------|-----------------------------------------------------------------------|
-| Financial Data (Real-time)| 0.1        | Stock prices, exchange rates, crypto (real-time preferred)             |
-| Breaking News            | 1           | Immediate coverage of major events                                     |
-| News/Current Events      | 1           | Time-sensitive news, politics, or global events                        |
-| Weather Forecasts        | 1           | Accuracy drops significantly after 24 hours                            |
-| Sports Scores/Events     | 1           | Live updates required for ongoing matches                              |
-| Security Advisories      | 1           | Critical security updates and patches                                  |
-| Social Media Trends      | 1           | Viral content, hashtags, memes                                         |
-| Cybersecurity Threats    | 7           | Rapidly evolving vulnerabilities/patches                               |
-| Tech News                | 7           | Technology industry updates and announcements                          |
-| Political Developments   | 7           | Legislative changes, political statements                              |
-| Political Elections      | 7           | Poll results, candidate updates                                        |
-| Sales/Promotions         | 7           | Limited-time offers and marketing campaigns                            |
-| Travel Restrictions      | 7           | Visa rules, pandemic-related policies                                  |
-| Entertainment News       | 14          | Celebrity updates, industry announcements                              |
-| Product Launches         | 14          | New product announcements and releases                                 |
-| Market Analysis          | 14          | Market trends and competitive landscape                                |
-| Competitive Intelligence | 21          | Analysis of competitor activities and market position                  |
-| Product Recalls          | 30          | Safety alerts or recalls from manufacturers                            |
-| Industry Reports         | 30          | Sector-specific analysis and forecasting                               |
-| Software Version Info    | 30          | Updates, patches, and compatibility information                        |
-| Legal/Regulatory Updates | 30          | Laws, compliance rules (jurisdiction-dependent)                        |
-| Economic Forecasts       | 30          | Macroeconomic predictions and analysis                                 |
-| Consumer Trends          | 45          | Shifting consumer preferences and behaviors                            |
-| Scientific Discoveries   | 60          | New research findings and breakthroughs (includes all scientific research) |
-| Healthcare Guidelines    | 60          | Medical recommendations and best practices (includes medical guidelines)|
-| Environmental Reports    | 60          | Climate and environmental status updates                               |
-| Best Practices           | 90          | Industry standards and recommended procedures                          |
-| API Documentation        | 90          | Technical specifications and implementation guides                     |
-| Tutorial Content         | 180         | How-to guides and instructional materials (includes educational content)|
-| Tech Product Info        | 180         | Product specs, release dates, or pricing                               |
-| Statistical Data         | 180         | Demographic and statistical information                                |
-| Reference Material       | 180         | General reference information and resources                            |
-| Historical Content       | 365         | Events and information from the past year                              |
-| Cultural Trends          | 730         | Shifts in language, fashion, or social norms                           |
-| Entertainment Releases   | 730         | Movie/TV show schedules, media catalogs                                |
-| Factual Knowledge        | ∞           | Static facts (e.g., historical events, geography, physical constants)   |
+| 问答类型 | 最大年龄(天) | 备注 |
+|---------|------------|------|
+| 金融数据(实时) | 0.1 | 股票价格、汇率、加密货币(优先实时) |
+| 突发新闻 | 1 | 重大事件的即时报道 |
+| 新闻/时事 | 1 | 时效性新闻、政治或全球事件 |
+| 天气预报 | 1 | 准确性在24小时后显著下降 |
+| 体育比分/赛事 | 1 | 进行中的比赛需要实时更新 |
+| 安全公告 | 1 | 关键安全更新和补丁 |
+| 社交媒体趋势 | 1 | 病毒内容、标签、迷因 |
+| 网络安全威胁 | 7 | 快速演变的漏洞/补丁 |
+| 科技新闻 | 7 | 技术行业更新和公告 |
+| 政治发展 | 7 | 立法变化、政治声明 |
+| 政治选举 | 7 | 民调结果、候选人更新 |
+| 销售/促销 | 7 | 限时优惠和营销活动 |
+| 旅行限制 | 7 | 签证规则、疫情相关政策 |
+| 娱乐新闻 | 14 | 名人更新、行业公告 |
+| 产品发布 | 14 | 新产品公告和发布 |
+| 市场分析 | 14 | 市场趋势和竞争格局 |
+| 竞争情报 | 21 | 竞争对手活动和市场地位分析 |
+| 产品召回 | 30 | 制造商安全警报或召回 |
+| 行业报告 | 30 | 特定行业分析和预测 |
+| 软件版本信息 | 30 | 更新、补丁和兼容性信息 |
+| 法律/监管更新 | 30 | 法律、合规规则(取决于司法管辖区) |
+| 经济预测 | 30 | 宏观经济预测和分析 |
+| 消费者趋势 | 45 | 消费者偏好和行为变化 |
+| 科学发现 | 60 | 新研究发现和突破(包括所有科学研究) |
+| 医疗指南 | 60 | 医疗建议和最佳实践(包括医疗指南) |
+| 环境报告 | 60 | 气候和环境状况更新 |
+| 最佳实践 | 90 | 行业标准和推荐程序 |
+| API文档 | 90 | 技术规范和实施指南 |
+| 教程内容 | 180 | 操作指南和教学材料(包括教育内容) |
+| 技术产品信息 | 180 | 产品规格、发布日期或定价 |
+| 统计数据 | 180 | 人口统计和统计信息 |
+| 参考资料 | 180 | 一般参考信息和资源 |
+| 历史内容 | 365 | 过去一年的事件和信息 |
+| 文化趋势 | 730 | 语言、时尚或社会规范的变化 |
+| 娱乐发布 | 730 | 电影/电视节目时间表、媒体目录 |
+| 事实知识 | ∞ | 静态事实(如历史事件、地理、物理常数) |
 
-### Implementation Notes:
-1. **Contextual Adjustment**: Freshness requirements may change during crises or rapid developments in specific domains.
-2. **Tiered Approach**: Consider implementing urgency levels (critical, important, standard) alongside age thresholds.
-3. **User Preferences**: Allow customization of thresholds for specific query types or user needs.
-4. **Source Reliability**: Pair freshness metrics with source credibility scores for better quality assessment.
-5. **Domain Specificity**: Some specialized fields (medical research during pandemics, financial data during market volatility) may require dynamically adjusted thresholds.
-6. **Geographic Relevance**: Regional considerations may alter freshness requirements for local regulations or events.
-</rules>`,
+### 实施说明：
+1. **上下文调整**：在特定领域的危机或快速发展期间，新鲜度要求可能会改变。
+2. **分层方法**：考虑实施紧急级别(关键、重要、标准)与年龄阈值一起。
+3. **用户偏好**：允许为特定查询类型或用户需求自定义阈值。
+4. **来源可靠性**：将新鲜度指标与来源可信度评分配对，以获得更好的质量评估。
+5. **领域特异性**：某些专业领域(疫情期间的医学研究、市场波动期间的金融数据)可能需要动态调整阈值。
+6. **地理相关性**：区域考虑可能会改变当地法规或事件的新鲜度要求。
+</规则>`,
 
     user: `
-Question: ${question}
-Answer: 
+问题: ${question}
+回答: 
 ${JSON.stringify(answer)}
 
-Please look at my answer and references and think.
+请查看我的回答和参考资料并思考。
 `
   }
 }
@@ -324,47 +328,47 @@ Please look at my answer and think.
 
 function getPluralityPrompt(question: string, answer: string): PromptPair {
   return {
-    system: `You are an evaluator that analyzes if answers provide the appropriate number of items requested in the question.
+    system: `您是一位评估专家，负责分析回答是否提供了问题中要求的适当数量的项目。
 
-<rules>
-Question Type Reference Table
+<规则>
+问题类型参考表
 
-| Question Type | Expected Items | Evaluation Rules |
-|---------------|----------------|------------------|
-| Explicit Count | Exact match to number specified | Provide exactly the requested number of distinct, non-redundant items relevant to the query. |
-| Numeric Range | Any number within specified range | Ensure count falls within given range with distinct, non-redundant items. For "at least N" queries, meet minimum threshold. |
-| Implied Multiple | ≥ 2 | Provide multiple items (typically 2-4 unless context suggests more) with balanced detail and importance. |
-| "Few" | 2-4 | Offer 2-4 substantive items prioritizing quality over quantity. |
-| "Several" | 3-7 | Include 3-7 items with comprehensive yet focused coverage, each with brief explanation. |
-| "Many" | 7+ | Present 7+ items demonstrating breadth, with concise descriptions per item. |
-| "Most important" | Top 3-5 by relevance | Prioritize by importance, explain ranking criteria, and order items by significance. |
-| "Top N" | Exactly N, ranked | Provide exactly N items ordered by importance/relevance with clear ranking criteria. |
-| "Pros and Cons" | ≥ 2 of each category | Present balanced perspectives with at least 2 items per category addressing different aspects. |
-| "Compare X and Y" | ≥ 3 comparison points | Address at least 3 distinct comparison dimensions with balanced treatment covering major differences/similarities. |
-| "Steps" or "Process" | All essential steps | Include all critical steps in logical order without missing dependencies. |
-| "Examples" | ≥ 3 unless specified | Provide at least 3 diverse, representative, concrete examples unless count specified. |
-| "Comprehensive" | 10+ | Deliver extensive coverage (10+ items) across major categories/subcategories demonstrating domain expertise. |
-| "Brief" or "Quick" | 1-3 | Present concise content (1-3 items) focusing on most important elements described efficiently. |
-| "Complete" | All relevant items | Provide exhaustive coverage within reasonable scope without major omissions, using categorization if needed. |
-| "Thorough" | 7-10 | Offer detailed coverage addressing main topics and subtopics with both breadth and depth. |
-| "Overview" | 3-5 | Cover main concepts/aspects with balanced coverage focused on fundamental understanding. |
-| "Summary" | 3-5 key points | Distill essential information capturing main takeaways concisely yet comprehensively. |
-| "Main" or "Key" | 3-7 | Focus on most significant elements fundamental to understanding, covering distinct aspects. |
-| "Essential" | 3-7 | Include only critical, necessary items without peripheral or optional elements. |
-| "Basic" | 2-5 | Present foundational concepts accessible to beginners focusing on core principles. |
-| "Detailed" | 5-10 with elaboration | Provide in-depth coverage with explanations beyond listing, including specific information and nuance. |
-| "Common" | 4-8 most frequent | Focus on typical or prevalent items, ordered by frequency when possible, that are widely recognized. |
-| "Primary" | 2-5 most important | Focus on dominant factors with explanation of their primacy and outsized impact. |
-| "Secondary" | 3-7 supporting items | Present important but not critical items that complement primary factors and provide additional context. |
-| Unspecified Analysis | 3-5 key points | Default to 3-5 main points covering primary aspects with balanced breadth and depth. |
-</rules>
+| 问题类型 | 预期项目数 | 评估规则 |
+|---------|-----------|---------|
+| 明确数量 | 与指定数量完全匹配 | 提供与查询相关的确切数量的不同、非冗余项目。 |
+| 数字范围 | 指定范围内的任何数字 | 确保数量在给定范围内，项目不同且非冗余。对于"至少N个"查询，满足最低阈值。 |
+| 隐含多个 | ≥ 2 | 提供多个项目(通常为2-4个，除非上下文建议更多)，详细程度和重要性平衡。 |
+| "几个" | 2-4 | 提供2-4个实质性项目，优先考虑质量而非数量。 |
+| "几项" | 3-7 | 包括3-7个项目，提供全面但重点突出的覆盖，每个项目有简短解释。 |
+| "许多" | 7+ | 呈现7个以上项目，展示广度，每个项目有简洁描述。 |
+| "最重要的" | 按相关性排序的前3-5项 | 按重要性排序，解释排名标准，并按重要性排列项目。 |
+| "前N个" | 恰好N个，排序 | 提供恰好N个按重要性/相关性排序的项目，有明确的排名标准。 |
+| "优缺点" | 每类≥2个 | 呈现平衡的观点，每个类别至少有2个项目，涉及不同方面。 |
+| "比较X和Y" | ≥3个比较点 | 解决至少3个不同的比较维度，平衡处理主要差异/相似之处。 |
+| "步骤"或"过程" | 所有必要步骤 | 按逻辑顺序包括所有关键步骤，不缺少依赖关系。 |
+| "例子" | ≥3个(除非另有说明) | 提供至少3个多样化、有代表性、具体的例子，除非指定了数量。 |
+| "全面" | 10+ | 提供广泛覆盖(10个以上项目)，跨主要类别/子类别，展示领域专业知识。 |
+| "简要"或"快速" | 1-3 | 呈现简洁内容(1-3个项目)，重点关注最重要的元素，高效描述。 |
+| "完整" | 所有相关项目 | 在合理范围内提供详尽覆盖，无重大遗漏，必要时使用分类。 |
+| "彻底" | 7-10 | 提供详细覆盖，解决主要主题和子主题，兼具广度和深度。 |
+| "概述" | 3-5 | 覆盖主要概念/方面，平衡覆盖，专注于基本理解。 |
+| "总结" | 3-5个要点 | 提炼基本信息，简洁而全面地捕捉主要要点。 |
+| "主要"或"关键" | 3-7 | 专注于对理解至关重要的最重要元素，涵盖不同方面。 |
+| "基本" | 3-7 | 仅包括关键、必要项目，不包括外围或可选元素。 |
+| "基础" | 2-5 | 呈现面向初学者的基础概念，专注于核心原则。 |
+| "详细" | 5-10个带详细说明 | 提供深入覆盖，包括列表之外的解释，包括具体信息和细微差别。 |
+| "常见" | 4-8个最频繁 | 专注于典型或普遍项目，尽可能按频率排序，这些项目被广泛认可。 |
+| "主要" | 2-5个最重要 | 专注于主导因素，解释其首要性和超大影响。 |
+| "次要" | 3-7个支持项目 | 呈现重要但非关键的项目，补充主要因素并提供额外上下文。 |
+| 未指定分析 | 3-5个要点 | 默认为3-5个主要点，涵盖主要方面，平衡广度和深度。 |
+</规则>
 `,
     user:
       `
-Question: ${question}
-Answer: ${answer}
+问题: ${question}
+回答: ${answer}
 
-Please look at my answer and think.
+请查看我的回答并思考。
 `
   }
 }

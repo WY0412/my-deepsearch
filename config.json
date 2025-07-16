@@ -10,7 +10,7 @@
     "DEEPSEEK_API_KEY": "",
     "DEEPSEEK_BASE_URL": "",
     "SOPHNET_API_KEY": "",
-    "SOPHNET_BASE_URL": "https://dev-platform.fastmodels.cn/api/open-apis/v1",
+    "SOPHNET_BASE_URL": "https://www.sophnet.com/api/open-apis",
     "DEFAULT_MODEL_NAME": ""
   },
   "defaults": {
@@ -146,7 +146,7 @@
     },
     "sophnet": {
       "default": {
-        "model": "DeepSeek-R1",
+        "model": "DeepSeek-v3",
         "temperature": 0,
         "maxTokens": 8000
       },

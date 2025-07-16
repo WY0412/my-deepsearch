@@ -496,7 +496,7 @@ export async function getResponse(question?: string,
   const imageObjects: ImageObject[] = [];
   const evaluationMetrics: Record<string, RepeatEvaluationType[]> = {};
   // reserve the 10% final budget for the beast mode
-  const regularBudget = tokenBudget * 0.85;
+  const regularBudget = tokenBudget * 0.75;
   const finalAnswerPIP: string[] = [];
   let trivialQuestion = false;
 
@@ -599,6 +599,16 @@ export async function getResponse(question?: string,
     const actionsStr = [allowSearch, allowRead, allowAnswer, allowReflect, allowCoding].map((a, i) => a ? ['search', 'read', 'answer', 'reflect'][i] : null).filter(a => a).join(', ');
     logDebug(`Step decision: ${thisStep.action} <- [${actionsStr}]`, { thisStep, currentQuestion });
 
+    // 添加日志记录，打印出评估前的答案内容
+    if (thisStep.action === 'answer' && thisStep.answer) {
+      logInfo('Pre-evaluation answer:', { 
+        question: currentQuestion,
+        answer: thisStep.answer,
+        step: totalStep,
+        isFinal: thisStep.isFinal
+      });
+    }
+
     context.actionTracker.trackAction({ totalStep, thisStep, gaps });
 
     // reset allow* to true
@@ -660,6 +670,16 @@ export async function getResponse(question?: string,
           allKnowledge,
           SchemaGen
         ) || evaluation;
+        
+        // 添加日志记录，打印出评估结果和评估后的答案状态
+        logInfo('Post-evaluation result:', { 
+          question: currentQuestion,
+          pass: evaluation.pass,
+          evaluationType: evaluation.type,
+          evaluationThink: evaluation.think,
+          step: totalStep,
+          improvement_plan: evaluation.improvement_plan || ''
+        });
       }
 
       if (currentQuestion.trim() === question) {
@@ -1080,6 +1100,12 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
   if (trivialQuestion) {
     answerStep.mdAnswer = buildMdFromAnswer(answerStep);
   } else if (!answerStep.isAggregated) {
+    // 添加日志记录，打印出finalizer处理前的答案
+    logInfo('Pre-finalizer answer:', { 
+      answerLength: answerStep.answer.length,
+      answerPreview: answerStep.answer.substring(0, 200) + '...'
+    });
+    
     answerStep.answer = repairMarkdownFinal(
       convertHtmlTablesToMd(
         fixBadURLMdLinks(
@@ -1094,6 +1120,12 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
             )
           ),
           allURLs)));
+          
+    // 添加日志记录，打印出finalizer处理后的答案
+    logInfo('Post-finalizer answer:', { 
+      answerLength: answerStep.answer.length,
+      answerPreview: answerStep.answer.substring(0, 200) + '...'
+    });
 
     const { answer, references } = await buildReferences(
       answerStep.answer,

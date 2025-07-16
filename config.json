@@ -146,7 +146,7 @@
     },
     "sophnet": {
       "default": {
-        "model": "DeepSeek-v3",
+        "model": "DeepSeek-R1",
         "temperature": 0,
         "maxTokens": 8000
       },

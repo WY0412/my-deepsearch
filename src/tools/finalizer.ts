@@ -74,6 +74,13 @@ export async function finalizeAnswer(
     const prompt = getPrompt(mdContent, knowledgeItems, schema);
     trackers?.actionTracker.trackThink('finalize_answer', schema.languageCode)
 
+    // 添加输入内容的日志记录
+    logInfo('Finalizer input content:', { 
+      contentLength: mdContent.length,
+      contentPreview: mdContent.substring(0, 200) + '...',
+      knowledgeItemsCount: knowledgeItems.length
+    });
+
     const result = await generateText({
       model: getModel(TOOL_NAME),
       system: prompt.system,
@@ -82,6 +89,15 @@ export async function finalizeAnswer(
 
     trackers.tokenTracker.trackUsage(TOOL_NAME, result.usage)
 
+    // 添加更详细的输出内容日志记录
+    logInfo('Finalizer output content:', { 
+      inputLength: mdContent.length,
+      outputLength: result.text.length,
+      lengthDifference: result.text.length - mdContent.length,
+      lengthRatio: (result.text.length / mdContent.length).toFixed(2),
+      outputPreview: result.text.substring(0, 200) + '...',
+      tokenUsage: result.usage
+    });
 
     logInfo(TOOL_NAME, { text: result.text });
     logDebug(`finalized answer before/after: ${mdContent.length} -> ${result.text.length}`);

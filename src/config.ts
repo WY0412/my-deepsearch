@@ -183,7 +183,7 @@ const configSummary = {
       : LLM_PROVIDER === 'deepseek'
         ? configJson.models.deepseek.default.model
         : LLM_PROVIDER === 'sophnet'
-          ? configJson.models.sophnet?.default.model || 'DeepSeek-v3'
+          ? configJson.models.sophnet?.default.model || 'DeepSeek-R1'
           : configJson.models.gemini.default.model,
     ...(LLM_PROVIDER === 'openai' && { baseUrl: OPENAI_BASE_URL }),
     ...(LLM_PROVIDER === 'deepseek' && { baseUrl: DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1' }),
@@ -198,9 +198,6 @@ const configSummary = {
       getToolConfig(name as ToolName)
     ])
   ),
-  defaults: {
-    stepSleep: STEP_SLEEP
-  }
 };
 
-logInfo('Configuration Summary:', { summary: configSummary });
+logInfo('Configuration loaded:', configSummary);

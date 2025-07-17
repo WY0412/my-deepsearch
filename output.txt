@@ -1,0 +1,6 @@
+
+> node-deepresearch@1.0.0 serve
+> ts-node src/server.ts
+
+{"severity":"INFO","message":"Configuration loaded:","component":"deepsearch","timestamp":"2025-07-17T03:20:16.497Z","provider":{"name":"sophnet","model":"DeepSeek-v3","baseUrl":"https://www.sophnet.com/api/open-apis"},"search":{"provider":"jina"},"tools":{"coder":{"model":"DeepSeek-v3","temperature":0.7,"maxTokens":8000},"researchPlanner":{"model":"DeepSeek-v3","temperature":0,"maxTokens":8000},"evaluator":{"model":"DeepSeek-v3","temperature":0,"maxTokens":8000},"errorAnalyzer":{"model":"DeepSeek-v3","temperature":0,"maxTokens":8000},"queryRewriter":{"model":"DeepSeek-v3","temperature":0.1,"maxTokens":8000},"serpCluster":{"model":"DeepSeek-v3","temperature":0,"maxTokens":8000},"agent":{"model":"DeepSeek-v3","temperature":0.7,"maxTokens":8000},"agentBeastMode":{"model":"DeepSeek-v3","temperature":0.7,"maxTokens":8000},"fallback":{"model":"DeepSeek-v3","temperature":0,"maxTokens":8000},"finalizer":{"model":"DeepSeek-v3","temperature":0,"maxTokens":8000},"reducer":{"model":"DeepSeek-v3","temperature":0,"maxTokens":16000}},"defaults":{"stepSleep":1}}
+Server running at http://localhost:3000

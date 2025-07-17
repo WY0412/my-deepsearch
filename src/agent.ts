@@ -1115,6 +1115,19 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
         numRetries: 2
       });
       
+      // 添加详细日志，显示Beast模式生成的结果
+      logInfo('Beast mode generation result:', {
+        hasObject: !!result?.object,
+        objectType: result?.object ? typeof result.object : 'undefined',
+        action: result?.object?.action,
+        hasThink: !!result?.object?.think,
+        hasAnswer: result?.object?.action === 'answer' && !!result?.object?.answer,
+        answerLength: result?.object?.action === 'answer' && result?.object?.answer ? result.object.answer.length : 0,
+        answerPreview: result?.object?.action === 'answer' && result?.object?.answer 
+          ? result.object.answer.substring(0, 100) + '...' 
+          : 'No answer content'
+      });
+      
       // 确保result.object存在且有必要的属性
       if (!result?.object || typeof result.object !== 'object') {
         // 创建一个安全的默认对象
@@ -1132,6 +1145,15 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
         // 确保对应action的属性对象存在
         const actionProps = (result.object[action] || {}) as Record<string, any>;
         
+        // 记录详细的actionProps信息
+        logInfo('Beast mode action properties:', {
+          action,
+          hasActionProps: !!actionProps,
+          actionPropsKeys: Object.keys(actionProps),
+          hasAnswer: action === 'answer' && !!actionProps.answer,
+          answerLength: action === 'answer' && actionProps.answer ? actionProps.answer.length : 0
+        });
+        
         thisStep = {
           action: action,
           think: result.object.think || '',
@@ -1139,6 +1161,16 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
           // 确保answer属性存在（如果action是answer）
           ...(action === 'answer' && !actionProps.answer ? { answer: '系统无法生成有效回答。' } : {})
         } as StepAction;
+        
+        // 记录最终构建的thisStep
+        logInfo('Beast mode final thisStep:', {
+          action: thisStep.action,
+          hasThink: !!thisStep.think,
+          hasAnswer: thisStep.action === 'answer' && !!(thisStep as AnswerAction).answer,
+          answerLength: thisStep.action === 'answer' && (thisStep as AnswerAction).answer 
+            ? (thisStep as AnswerAction).answer.length 
+            : 0
+        });
       }
     } catch (error) {
       // 处理异常情况

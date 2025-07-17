@@ -74,7 +74,7 @@ export type CodingAction = BaseAction & {
 
 export type StepAction = SearchAction | AnswerAction | ReflectAction | VisitAction | CodingAction;
 
-export type EvaluationType = 'definitive' | 'freshness' | 'plurality' | 'attribution' | 'completeness' | 'strict';
+export type EvaluationType = 'definitive' | 'freshness' | 'plurality' | 'attribution' | 'completeness' | 'strict' | 'content_richness';
 
 export type RepeatEvaluationType = {
   type: EvaluationType;
@@ -191,6 +191,14 @@ export type EvaluationResponse = {
   completeness_analysis?: {
     aspects_expected: string,
     aspects_provided: string,
+  },
+  content_richness_analysis?: {
+    word_count: number,
+    word_count_score: number,
+    paragraph_structure_score: number,
+    content_depth_score: number,
+    expression_style_score: number,
+    total_score: number
   },
   improvement_plan?: string;
 };

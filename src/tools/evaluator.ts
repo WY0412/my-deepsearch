@@ -373,16 +373,103 @@ function getPluralityPrompt(question: string, answer: string): PromptPair {
   }
 }
 
+function getContentRichnessPrompt(question: string, answer: string): PromptPair {
+  return {
+    system: `您是一位评估专家，负责分析回答的内容丰富度、段落结构和字数是否满足要求。
+
+<规则>
+内容丰富度评估标准
+
+1. 字数要求：
+   - 每个三级标题(###)下的内容应至少1000字
+   - 整体回答应根据问题复杂度提供足够的内容长度
+   - 如果问题明确要求特定字数，必须满足该要求
+
+2. 段落结构：
+   - 段落应组织合理，每段应有明确的主题和论点
+   - 避免过度分点列举，每点只有1-2句话的情况
+   - 段落长度应适中，通常5-8句话为宜
+   - 相关内容应形成连贯的段落，而非零散的短句
+
+3. 内容深度：
+   - 应提供深入分析而非表面描述
+   - 包含具体事实、数据、案例或论据支持观点
+   - 多角度分析问题，考虑不同维度
+   - 避免空洞、模糊或过于一般化的表述
+
+4. 风格要求：
+   - 避免过度使用AI风格的分点罗列
+   - 使用自然、流畅的叙述风格
+   - 适当使用过渡词增强段落间的连贯性
+   - 保持专业、客观的语气
+
+5. 评分标准：
+   - 字数充足度(0-10分)：实际字数与要求的比例
+   - 段落结构(0-10分)：段落组织是否自然连贯
+   - 内容深度(0-10分)：分析是否深入、多维
+   - 表达风格(0-10分)：是否避免AI式分点罗列
+   - 总分低于28分视为不通过
+</规则>
+
+<示例>
+问题："请分析人工智能对未来就业市场的影响"
+回答："人工智能将影响就业市场。
+1. 自动化替代：AI将替代重复性工作
+2. 新职业创造：将创造新的工作岗位
+3. 技能需求变化：需要更多技术技能
+4. 行业转型：传统行业将被颠覆
+5. 收入不平等：可能加剧贫富差距"
+评估：{
+  "think": "回答虽然涵盖了多个方面，但每点只有一句话，没有深入分析。整体字数不足200字，缺乏具体案例和数据支持。采用了典型的AI分点罗列风格，没有形成连贯段落。",
+  "content_richness_analysis": {
+    "word_count": 78,
+    "word_count_score": 2,
+    "paragraph_structure_score": 3,
+    "content_depth_score": 4,
+    "expression_style_score": 2,
+    "total_score": 11
+  },
+  "pass": false
+}
+
+问题："请详细介绍罗马的历史与文化"
+回答："罗马是世界上最古老、最具历史意义的城市之一，其历史可追溯至公元前753年。作为古罗马帝国的中心，这座城市见证了人类文明的重要发展阶段。罗马的建立与罗穆卢斯和雷穆斯兄弟的传说紧密相连，这一神话故事已成为西方文化的重要组成部分。
+
+罗马的政治制度经历了从王政时期到共和国再到帝国的演变。共和国时期（公元前509年至公元前27年）建立了影响深远的政治体系，包括元老院、执政官制度以及公民大会等机构，这些政治创新至今仍影响着现代民主制度。奥古斯都建立帝国后，罗马进入了"罗马和平"时期，帝国疆域扩展至地中海周边大部分地区。
+
+罗马文化融合了希腊、伊特鲁里亚等多种文明元素，但发展出独特的艺术、建筑和文学传统。罗马建筑以其宏伟规模和创新技术闻名，万神殿的圆顶设计展示了罗马人在建筑工程上的非凡才能。罗马法是其另一重要贡献，《民法大全》成为后世欧洲法律体系的基础。"
+评估：{
+  "think": "回答形成了连贯的段落，每段有明确主题，包含具体历史事实和文化内容。段落结构自然，避免了简单列举。但整体字数约300字，对于介绍罗马历史与文化这样宽泛的主题仍显不足，需要更多内容覆盖艺术、宗教、日常生活等方面。",
+  "content_richness_analysis": {
+    "word_count": 305,
+    "word_count_score": 6,
+    "paragraph_structure_score": 9,
+    "content_depth_score": 7,
+    "expression_style_score": 9,
+    "total_score": 31
+  },
+  "pass": true
+}
+</示例>`,
+    user: `
+问题: ${question}
+回答: ${answer}
+
+请查看我的回答并思考。
+`
+  }
+}
 
 function getQuestionEvaluationPrompt(question: string): PromptPair {
   return {
-    system: `You are an evaluator that determines if a question requires definitive, freshness, plurality, and/or completeness checks.
+    system: `You are an evaluator that determines if a question requires definitive, freshness, plurality, completeness, and/or content_richness checks.
 
 <evaluation_types>
 definitive - Checks if the question requires a definitive answer or if uncertainty is acceptable (open-ended, speculative, discussion-based)
 freshness - Checks if the question is time-sensitive or requires very recent information
 plurality - Checks if the question asks for multiple items, examples, or a specific count or enumeration
 completeness - Checks if the question explicitly mentions multiple named elements that all need to be addressed
+content_richness - Checks if the question requires a detailed, in-depth response with substantial word count and well-structured paragraphs
 </evaluation_types>
 
 <rules>
@@ -418,7 +505,15 @@ completeness - Checks if the question explicitly mentions multiple named element
      * Named time periods: "Renaissance and Industrial Revolution"
    - Look for explicitly named elements separated by commas, "and", "or", bullets
    - Example patterns: "comparing X and Y", "differences between A, B, and C", "both P and Q"
-   - DO NOT trigger for elements that aren't specifically named   
+   - DO NOT trigger for elements that aren't specifically named
+
+5. Content Richness Evaluation:
+   - Required for questions that explicitly request detailed, in-depth, or comprehensive responses
+   - Required when specific word count is mentioned: "at least 1000 words", "detailed report"
+   - Look for terms: "detailed", "comprehensive", "in-depth", "thorough", "elaborate"
+   - Required for complex topics that inherently need substantial explanation
+   - Look for academic or professional context clues that suggest formal, detailed response
+   - Required when question asks for analysis, explanation, or discussion of complex topics
 </rules>
 
 <examples>
@@ -564,6 +659,34 @@ This is a classic philosophical paradox that is inherently unanswerable in a def
 "needsCompleteness": false,
 </output>
 </example-11>
+
+<example-12>
+请根据大纲编写一份项目可行性报告，每个小节不少于1000字。
+<think>
+这个问题明确要求"每个小节不少于1000字"，这是一个明确的字数要求，需要进行内容丰富度评估。问题要求编写一份项目可行性报告，这是一个需要详细、全面分析的专业文档，需要确定性评估以确保内容准确。没有提到需要最新信息，也没有要求列举多个项目或明确提到需要覆盖的多个方面，因此不需要新鲜度、复数性和完整性评估。
+</think>
+<o>
+"needsDefinitive": true,
+"needsFreshness": false,
+"needsPlurality": false,
+"needsCompleteness": false,
+"needsContentRichness": true
+</o>
+</example-12>
+
+<example-13>
+详细分析当前中美贸易关系的现状、问题及未来发展趋势。
+<think>
+这个问题要求"详细分析"，表明需要深入、全面的回答，因此需要内容丰富度评估。"当前"表明需要最新信息，因此需要新鲜度评估。问题明确提到三个方面：现状、问题及未来发展趋势，这些是需要全面覆盖的命名元素，因此需要完整性评估。作为一个基于事实的地缘政治分析，需要确定性评估以确保内容准确。
+</think>
+<o>
+"needsDefinitive": true,
+"needsFreshness": true,
+"needsPlurality": false,
+"needsCompleteness": true,
+"needsContentRichness": true
+</o>
+</example-13>
 </examples>
 
 `,
@@ -590,14 +713,13 @@ export async function evaluateQuestion(
       prompt: prompt.user
     });
 
-
-
     // Always include definitive in types
     const types: EvaluationType[] = [];
     if (result.object.needsDefinitive) types.push('definitive');
     if (result.object.needsFreshness) types.push('freshness');
     if (result.object.needsPlurality) types.push('plurality');
     if (result.object.needsCompleteness) types.push('completeness');
+    if (result.object.needsContentRichness) types.push('content_richness');
 
     logInfo(TOOL_NAME, { question, types });
     trackers?.actionTracker.trackThink(result.object.think);
@@ -646,11 +768,9 @@ export async function evaluateAnswer(
 ): Promise<EvaluationResponse> {
   let result;
 
-
   for (const evaluationType of evaluationTypes) {
     let prompt: { system: string; user: string } | undefined
     switch (evaluationType) {
-
       case 'definitive':
         prompt = getDefinitivePrompt(question, action.answer);
         break;
@@ -662,6 +782,9 @@ export async function evaluateAnswer(
         break;
       case 'completeness':
         prompt = getCompletenessPrompt(question, action.answer);
+        break;
+      case 'content_richness':
+        prompt = getContentRichnessPrompt(question, action.answer);
         break;
       case 'strict':
         prompt = getRejectAllAnswersPrompt(question, action, allKnowledge);
@@ -690,5 +813,4 @@ export async function evaluateAnswer(
   }
 
   return result?.object as EvaluationResponse;
-
 }

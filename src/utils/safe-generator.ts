@@ -9,7 +9,7 @@ import {
 import { TokenTracker } from "./token-tracker";
 import { getModel, ToolName, getToolConfig } from "../config";
 import Hjson from 'hjson'; // Import Hjson library
-import { logError, logDebug, logWarning } from '../logging';
+import { logError, logDebug, logWarning, logInfo } from '../logging';
 
 interface GenerateObjectResult<T> {
   object: T;
@@ -227,7 +227,17 @@ export class ObjectGeneratorSafe {
       try {
         // First try standard JSON parsing
         const partialResponse = JSON.parse((error as any).text);
-        logDebug('JSON parse success!');
+        // 添加更详细的日志，显示解析后的JSON内容
+        logInfo('JSON parse success - parsed content:', { 
+          action: partialResponse.action,
+          hasThink: !!partialResponse.think,
+          hasAnswer: partialResponse.action === 'answer' && !!partialResponse.answer,
+          answerLength: partialResponse.action === 'answer' && partialResponse.answer ? partialResponse.answer.length : 0,
+          answerPreview: partialResponse.action === 'answer' && partialResponse.answer 
+            ? partialResponse.answer.substring(0, 100) + '...' 
+            : 'No answer content',
+          fullObject: JSON.stringify(partialResponse).substring(0, 500) + (JSON.stringify(partialResponse).length > 500 ? '...' : '')
+        });
         return {
           object: partialResponse as T,
           usage: (error as any).usage
@@ -236,7 +246,17 @@ export class ObjectGeneratorSafe {
         // Use Hjson to parse the error response for more lenient parsing
         try {
           const hjsonResponse = Hjson.parse((error as any).text);
-          logDebug('Hjson parse success!');
+          // 添加更详细的日志，显示Hjson解析后的内容
+          logInfo('Hjson parse success - parsed content:', { 
+            action: hjsonResponse.action,
+            hasThink: !!hjsonResponse.think,
+            hasAnswer: hjsonResponse.action === 'answer' && !!hjsonResponse.answer,
+            answerLength: hjsonResponse.action === 'answer' && hjsonResponse.answer ? hjsonResponse.answer.length : 0,
+            answerPreview: hjsonResponse.action === 'answer' && hjsonResponse.answer 
+              ? hjsonResponse.answer.substring(0, 100) + '...' 
+              : 'No answer content',
+            fullObject: JSON.stringify(hjsonResponse).substring(0, 500) + (JSON.stringify(hjsonResponse).length > 500 ? '...' : '')
+          });
           return {
             object: hjsonResponse as T,
             usage: (error as any).usage

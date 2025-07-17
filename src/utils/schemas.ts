@@ -149,6 +149,7 @@ export class Schemas {
       needsFreshness: z.boolean(),
       needsPlurality: z.boolean(),
       needsCompleteness: z.boolean(),
+      needsContentRichness: z.boolean(),
     });
   }
 
@@ -261,6 +262,20 @@ export class Schemas {
             aspects_provided: z.string().describe('Comma-separated list of all aspects or dimensions that were actually addressed in the answer').max(100),
           }),
           ...baseSchemaAfter
+        });
+      case "content_richness":
+        return z.object({
+          type: z.literal('content_richness'),
+          ...baseSchemaBefore,
+          content_richness_analysis: z.object({
+            word_count: z.number().describe('Total word count of the answer'),
+            word_count_score: z.number().describe('Score for word count adequacy (0-10)').min(0).max(10),
+            paragraph_structure_score: z.number().describe('Score for paragraph structure and organization (0-10)').min(0).max(10),
+            content_depth_score: z.number().describe('Score for depth and richness of content (0-10)').min(0).max(10),
+            expression_style_score: z.number().describe('Score for natural expression style avoiding AI-like bullet points (0-10)').min(0).max(10),
+            total_score: z.number().describe('Sum of all scores, pass if >= 28')
+          }),
+          pass: z.boolean().describe('If total_score >= 28 then pass!')
         });
       case 'strict':
         return z.object({

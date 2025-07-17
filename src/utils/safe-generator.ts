@@ -224,6 +224,12 @@ export class ObjectGeneratorSafe {
   private async handleGenerateObjectError<T>(error: unknown): Promise<GenerateObjectResult<T>> {
     if (NoObjectGeneratedError.isInstance(error)) {
       logWarning('Object not generated according to schema, fallback to manual parsing', { error });
+      
+      // 记录原始响应文本，不截断
+      logInfo('Raw response text:', { 
+        rawText: (error as any).text
+      });
+      
       try {
         // First try standard JSON parsing
         const partialResponse = JSON.parse((error as any).text);
@@ -238,11 +244,20 @@ export class ObjectGeneratorSafe {
             : 'No answer content',
           fullObject: JSON.stringify(partialResponse).substring(0, 500) + (JSON.stringify(partialResponse).length > 500 ? '...' : '')
         });
+        
+        // 将完整的解析后JSON写入到单独的日志条目中，不截断
+        logInfo('Complete parsed JSON:', {
+          completeJSON: JSON.stringify(partialResponse)
+        });
+        
         return {
           object: partialResponse as T,
           usage: (error as any).usage
         };
       } catch (parseError) {
+        // 记录JSON解析错误
+        logError('JSON parsing failed:', { parseError });
+        
         // Use Hjson to parse the error response for more lenient parsing
         try {
           const hjsonResponse = Hjson.parse((error as any).text);
@@ -257,6 +272,12 @@ export class ObjectGeneratorSafe {
               : 'No answer content',
             fullObject: JSON.stringify(hjsonResponse).substring(0, 500) + (JSON.stringify(hjsonResponse).length > 500 ? '...' : '')
           });
+          
+          // 将完整的解析后Hjson写入到单独的日志条目中，不截断
+          logInfo('Complete parsed Hjson:', {
+            completeJSON: JSON.stringify(hjsonResponse)
+          });
+          
           return {
             object: hjsonResponse as T,
             usage: (error as any).usage

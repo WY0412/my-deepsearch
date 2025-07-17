@@ -1122,10 +1122,15 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
         action: result?.object?.action,
         hasThink: !!result?.object?.think,
         hasAnswer: result?.object?.action === 'answer' && !!result?.object?.answer,
-        answerLength: result?.object?.action === 'answer' && result?.object?.answer ? result.object.answer.length : 0,
+        answerLength: result?.object?.action === 'answer' && result?.object?.answer ? 
+          (typeof result.object.answer === 'string' ? result.object.answer.length : JSON.stringify(result.object.answer).length) : 0,
         answerPreview: result?.object?.action === 'answer' && result?.object?.answer 
-          ? result.object.answer.substring(0, 100) + '...' 
-          : 'No answer content'
+          ? (typeof result.object.answer === 'string' 
+              ? result.object.answer.substring(0, 100) + '...' 
+              : JSON.stringify(result.object.answer).substring(0, 100) + '...') 
+          : 'No answer content',
+        answerType: result?.object?.action === 'answer' && result?.object?.answer ? typeof result.object.answer : 'undefined',
+        rawAnswer: result?.object?.action === 'answer' ? result.object.answer : null
       });
       
       // 确保result.object存在且有必要的属性
@@ -1227,9 +1232,17 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
     try {
       // 添加日志记录，打印出finalizer处理前的答案
       logInfo('Pre-finalizer answer:', { 
-        answerLength: answerStep.answer.length,
-        answerPreview: answerStep.answer.substring(0, 200) + '...'
+        answerLength: typeof answerStep.answer === 'string' ? answerStep.answer.length : JSON.stringify(answerStep.answer).length,
+        answerType: typeof answerStep.answer,
+        answerPreview: typeof answerStep.answer === 'string' 
+          ? answerStep.answer.substring(0, 200) + '...'
+          : JSON.stringify(answerStep.answer).substring(0, 200) + '...'
       });
+      
+      // 确保answer是字符串类型
+      if (typeof answerStep.answer !== 'string') {
+        answerStep.answer = JSON.stringify(answerStep.answer, null, 2);
+      }
       
       // 使用finalizeAnswer处理答案
       let finalizedAnswer = '';
@@ -1259,8 +1272,11 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
             
       // 添加日志记录，打印出finalizer处理后的答案
       logInfo('Post-finalizer answer:', { 
-        answerLength: answerStep.answer.length,
-        answerPreview: answerStep.answer.substring(0, 200) + '...'
+        answerLength: typeof answerStep.answer === 'string' ? answerStep.answer.length : JSON.stringify(answerStep.answer).length,
+        answerType: typeof answerStep.answer,
+        answerPreview: typeof answerStep.answer === 'string' 
+          ? answerStep.answer.substring(0, 200) + '...'
+          : JSON.stringify(answerStep.answer).substring(0, 200) + '...'
       });
 
       // 构建引用

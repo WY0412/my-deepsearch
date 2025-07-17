@@ -237,91 +237,90 @@ ${JSON.stringify(answer)}
 
 function getCompletenessPrompt(question: string, answer: string): PromptPair {
   return {
-    system: `You are an evaluator that determines if an answer addresses all explicitly mentioned aspects of a multi-aspect question.
+    system: `您是一位评估专家，负责判断回答是否涵盖了多方面问题中明确提及的所有方面。
 
-<rules>
-For questions with **explicitly** multiple aspects:
+<规则>
+对于明确包含多个方面的问题：
 
-1. Explicit Aspect Identification:
-   - Only identify aspects that are explicitly mentioned in the question
-   - Look for specific topics, dimensions, or categories mentioned by name
-   - Aspects may be separated by commas, "and", "or", bullets, or mentioned in phrases like "such as X, Y, and Z"
-   - DO NOT include implicit aspects that might be relevant but aren't specifically mentioned
+1. 明确方面识别：
+   - 只识别问题中明确提及的方面
+   - 寻找特别提到的具体主题、维度或类别
+   - 方面可能通过逗号、"和"、"或"、项目符号分隔，或在"如X、Y和Z"等短语中提及
+   - 不要包括可能相关但未明确提及的隐含方面
 
-2. Coverage Assessment:
-   - Each explicitly mentioned aspect should be addressed in the answer
-   - Recognize that answers may use different terminology, synonyms, or paraphrases for the same aspects
-   - Look for conceptual coverage rather than exact wording matches
-   - Calculate a coverage score (aspects addressed / aspects explicitly mentioned)
+2. 覆盖度评估：
+   - 回答应涵盖每个明确提及的方面
+   - 认识到回答可能使用不同术语、同义词或对同一方面的改述
+   - 寻找概念覆盖而非精确词语匹配
+   - 计算覆盖率（已涵盖方面数 / 明确提及的方面总数）
 
-3. Pass/Fail Determination:
-   - Pass: Addresses all explicitly mentioned aspects, even if using different terminology or written in different language styles
-   - Fail: Misses one or more explicitly mentioned aspects
-</rules>
+3. 通过/失败判定：
+   - 通过：涵盖所有明确提及的方面，即使使用不同术语或不同语言风格
+   - 失败：遗漏一个或多个明确提及的方面
+</规则>
 
-<examples>
-Question: "How does climate change impact agricultural practices, water resources, and biodiversity in Mediterranean regions?"
-Answer: "Climate change affects Mediterranean agriculture through rising temperatures and changing rainfall patterns. Farmers now implement drip irrigation to conserve water and shift planting schedules. Freshwater availability has decreased dramatically, with groundwater depletion and seasonal streams drying up earlier each year."
-Aspects_Expected: "agricultural practices, water resources, biodiversity"
-Aspects_Provided: "farming adaptations, irrigation methods, precipitation changes, freshwater availability, groundwater depletion"
-Think: "The question explicitly mentions three aspects: agricultural practices, water resources, and biodiversity. The answer addresses agricultural practices (discussing farming adaptations, irrigation methods, planting schedules) and water resources (covering freshwater availability, groundwater depletion, seasonal streams). However, it completely omits any discussion of biodiversity effects, which was explicitly requested in the question."
-Pass: false
+<示例>
+问题："气候变化如何影响地中海地区的农业实践、水资源和生物多样性？"
+回答："气候变化通过气温升高和降雨模式改变影响地中海农业。农民现在实施滴灌技术以节约用水并调整种植时间表。淡水可用性已显著下降，地下水枯竭，季节性溪流每年干涸时间提前。"
+预期方面："农业实践、水资源、生物多样性"
+提供方面："农业适应、灌溉方法、降水变化、淡水可用性、地下水枯竭"
+思考："问题明确提到三个方面：农业实践、水资源和生物多样性。回答涵盖了农业实践（讨论了农业适应、灌溉方法、种植时间表）和水资源（涵盖了淡水可用性、地下水枯竭、季节性溪流）。然而，它完全忽略了生物多样性影响的讨论，而这是问题中明确要求的。"
+通过：否
 
-Question: "What are the key considerations when designing a microservice architecture, including scalability, fault tolerance, and data consistency patterns?"
-Answer: "When engineering distributed systems, horizontal expansion capacity is crucial - teams should implement load distribution and auto-scaling for peak demand periods. System resilience is achieved through failure detection mechanisms, redundancy implementations, and isolation boundaries to prevent cascading outages. For maintaining data integrity across services, developers can implement orchestrated transaction sequences, append-only event logs, and separate command/query responsibility models."
-Aspects_Expected: "scalability, fault tolerance, data consistency patterns"
-Aspects_Provided: "horizontal expansion capacity, load distribution, auto-scaling, system resilience, failure detection, redundancy, isolation boundaries, data integrity, orchestrated transaction sequences, append-only event logs, command/query responsibility models"
-Think: "The question explicitly mentions three aspects of microservice architecture: scalability, fault tolerance, and data consistency patterns. Although using different terminology, the answer addresses all three: scalability (through 'horizontal expansion capacity', 'load distribution', and 'auto-scaling'), fault tolerance (via 'system resilience', 'failure detection', 'redundancy', and 'isolation boundaries'), and data consistency patterns (discussing 'data integrity', 'orchestrated transaction sequences', 'append-only event logs', and 'command/query responsibility models'). All explicitly mentioned aspects are covered despite the terminology differences."
-Pass: true
+问题："设计微服务架构时的关键考虑因素有哪些，包括可扩展性、容错性和数据一致性模式？"
+回答："在设计分布式系统时，水平扩展能力至关重要 - 团队应实施负载分配和自动扩展以应对高峰期需求。系统弹性通过故障检测机制、冗余实现和隔离边界来实现，防止级联故障。对于跨服务维护数据完整性，开发人员可以实施编排事务序列、仅追加事件日志和分离命令/查询责任模型。"
+预期方面："可扩展性、容错性、数据一致性模式"
+提供方面："水平扩展能力、负载分配、自动扩展、系统弹性、故障检测、冗余、隔离边界、数据完整性、编排事务序列、仅追加事件日志、命令/查询责任模型"
+思考："问题明确提到微服务架构的三个方面：可扩展性、容错性和数据一致性模式。尽管使用了不同的术语，回答涵盖了所有三个方面：可扩展性（通过'水平扩展能力'、'负载分配'和'自动扩展'）、容错性（通过'系统弹性'、'故障检测'、'冗余'和'隔离边界'）以及数据一致性模式（讨论了'数据完整性'、'编排事务序列'、'仅追加事件日志'和'命令/查询责任模型'）。尽管术语不同，所有明确提及的方面都得到了覆盖。"
+通过：是
 
-Question: "Compare iOS and Android in terms of user interface, app ecosystem, and security."
-Answer: "Apple's mobile platform presents users with a curated visual experience emphasizing minimalist design and consistency, while Google's offering focuses on flexibility and customization options. The App Store's review process creates a walled garden with higher quality control but fewer options, whereas Play Store offers greater developer freedom and variety. Apple employs strict sandboxing techniques and maintains tight hardware-software integration."
-Aspects_Expected: "user interface, app ecosystem, security"
-Aspects_Provided: "visual experience, minimalist design, flexibility, customization, App Store review process, walled garden, quality control, Play Store, developer freedom, sandboxing, hardware-software integration"
-Think: "The question explicitly asks for a comparison of iOS and Android across three specific aspects: user interface, app ecosystem, and security. The answer addresses user interface (discussing 'visual experience', 'minimalist design', 'flexibility', and 'customization') and app ecosystem (mentioning 'App Store review process', 'walled garden', 'quality control', 'Play Store', and 'developer freedom'). For security, it mentions 'sandboxing' and 'hardware-software integration', which are security features of iOS, but doesn't provide a comparative analysis of Android's security approach. Since security is only partially addressed for one platform, the comparison of this aspect is incomplete."
-Pass: false
+问题："从用户界面、应用生态系统和安全性方面比较iOS和Android。"
+回答："苹果的移动平台为用户提供了精心策划的视觉体验，强调极简设计和一致性，而谷歌的产品则注重灵活性和定制选项。App Store的审核流程创建了一个围墙花园，具有更高的质量控制但选择更少，而Play Store则提供更大的开发者自由度和多样性。苹果采用严格的沙盒技术并保持紧密的硬件-软件集成。"
+预期方面："用户界面、应用生态系统、安全性"
+提供方面："视觉体验、极简设计、灵活性、定制化、App Store审核流程、围墙花园、质量控制、Play Store、开发者自由度、沙盒、硬件-软件集成"
+思考："问题明确要求比较iOS和Android在三个特定方面：用户界面、应用生态系统和安全性。回答涵盖了用户界面（讨论了'视觉体验'、'极简设计'、'灵活性'和'定制化'）和应用生态系统（提到了'App Store审核流程'、'围墙花园'、'质量控制'、'Play Store'和'开发者自由度'）。对于安全性，它提到了'沙盒'和'硬件-软件集成'，这些是iOS的安全功能，但没有提供Android安全方法的比较分析。由于安全性方面只针对一个平台部分涵盖，这一方面的比较不完整。"
+通过：否
 
-Question: "Explain how social media affects teenagers' mental health, academic performance, and social relationships."
-Answer: "Platforms like Instagram and TikTok have been linked to psychological distress among adolescents, with documented increases in comparative thinking patterns and anxiety about social exclusion. Scholastic achievement often suffers as screen time increases, with homework completion rates declining and attention spans fragmenting during study sessions. Peer connections show a complex duality - digital platforms facilitate constant contact with friend networks while sometimes diminishing in-person social skill development and enabling new forms of peer harassment."
-Aspects_Expected: "mental health, academic performance, social relationships"
-Aspects_Provided: "psychological distress, comparative thinking, anxiety about social exclusion, scholastic achievement, screen time, homework completion, attention spans, peer connections, constant contact with friend networks, in-person social skill development, peer harassment"
-Think: "The question explicitly asks about three aspects of social media's effects on teenagers: mental health, academic performance, and social relationships. The answer addresses all three using different terminology: mental health (discussing 'psychological distress', 'comparative thinking', 'anxiety about social exclusion'), academic performance (mentioning 'scholastic achievement', 'screen time', 'homework completion', 'attention spans'), and social relationships (covering 'peer connections', 'constant contact with friend networks', 'in-person social skill development', and 'peer harassment'). All explicitly mentioned aspects are covered despite using different language."
-Pass: true
+问题："解释社交媒体如何影响青少年的心理健康、学业表现和社交关系。"
+回答："像Instagram和TikTok这样的平台与青少年的心理困扰有关，有记录表明比较性思维模式增加和对社交排斥的焦虑。随着屏幕时间增加，学业成绩往往受到影响，作业完成率下降，学习过程中注意力分散。同伴关系呈现复杂的二元性 - 数字平台促进与朋友网络的持续联系，同时有时减少面对面社交技能发展并促成新形式的同伴骚扰。"
+预期方面："心理健康、学业表现、社交关系"
+提供方面："心理困扰、比较性思维、社交排斥焦虑、学业成绩、屏幕时间、作业完成率、注意力分散、同伴关系、与朋友网络的持续联系、面对面社交技能发展、同伴骚扰"
+思考："问题明确询问社交媒体对青少年的三个方面影响：心理健康、学业表现和社交关系。回答使用不同术语涵盖了所有三个方面：心理健康（讨论了'心理困扰'、'比较性思维'、'社交排斥焦虑'）、学业表现（提到了'学业成绩'、'屏幕时间'、'作业完成率'、'注意力分散'）和社交关系（涵盖了'同伴关系'、'与朋友网络的持续联系'、'面对面社交技能发展'和'同伴骚扰'）。尽管使用了不同的语言，所有明确提及的方面都得到了覆盖。"
+通过：是
 
-Question: "What economic and political factors contributed to the 2008 financial crisis?"
-Answer: "The real estate market collapse after years of high-risk lending practices devastated mortgage-backed securities' value. Wall Street had created intricate derivative products that disguised underlying risk levels, while credit assessment organizations failed in their oversight role. Legislative changes in the financial industry during the 1990s eliminated regulatory guardrails that previously limited excessive leverage and speculation among investment banks."
-Aspects_Expected: "economic factors, political factors"
-Aspects_Provided: "real estate market collapse, high-risk lending, mortgage-backed securities, derivative products, risk disguising, credit assessment failures, legislative changes, regulatory guardrail elimination, leverage, speculation"
-Think: "The question explicitly asks about two categories of factors: economic and political. The answer addresses economic factors ('real estate market collapse', 'high-risk lending', 'mortgage-backed securities', 'derivative products', 'risk disguising', 'credit assessment failures') and political factors ('legislative changes', 'regulatory guardrail elimination'). While using different terminology, the answer covers both explicitly requested aspects."
-Pass: true
+问题："哪些经济和政治因素导致了2008年金融危机？"
+回答："多年高风险贷款实践后的房地产市场崩溃严重损害了抵押贷款支持证券的价值。华尔街创造了复杂的衍生品，掩盖了潜在的风险水平，而信用评估机构在监督角色中失败。1990年代金融行业的立法变化消除了先前限制投资银行过度杠杆和投机的监管护栏。"
+预期方面："经济因素、政治因素"
+提供方面："房地产市场崩溃、高风险贷款、抵押贷款支持证券、衍生品、风险掩盖、信用评估失败、立法变化、监管护栏消除、杠杆、投机"
+思考："问题明确询问两类因素：经济和政治。回答涵盖了经济因素（'房地产市场崩溃'、'高风险贷款'、'抵押贷款支持证券'、'衍生品'、'风险掩盖'、'信用评估失败'）和政治因素（'立法变化'、'监管护栏消除'）。虽然使用了不同的术语，但回答涵盖了两个明确要求的方面。"
+通过：是
 
-Question: "コロナウイルスの感染拡大が経済、教育システム、および医療インフラにどのような影響を与えましたか？"
-Answer: "コロナウイルスは世界経済に甚大な打撃を与え、多くの企業が倒産し、失業率が急増しました。教育については、遠隔学習への移行が進み、デジタル格差が浮き彫りになりましたが、新しい教育テクノロジーの採用も加速しました。"
-Aspects_Expected: "経済、教育システム、医療インフラ"
-Aspects_Provided: "世界経済、企業倒産、失業率、遠隔学習、デジタル格差、教育テクノロジー"
-Think: "質問では明示的にコロナウイルスの影響の三つの側面について尋ねています：経済、教育システム、医療インフラです。回答は経済（「世界経済」「企業倒産」「失業率」について）と教育システム（「遠隔学習」「デジタル格差」「教育テクノロジー」について）に対応していますが、質問で明示的に求められていた医療インフラへの影響についての議論が完全に省略されています。"
-Pass: false
+问题："新冠病毒的传播对经济、教育系统和医疗基础设施有什么影响？"
+回答："新冠病毒对全球经济造成了巨大打击，许多企业倒闭，失业率急剧上升。在教育方面，向远程学习的转变加剧了数字鸿沟，但也加速了新教育技术的采用。"
+预期方面："经济、教育系统、医疗基础设施"
+提供方面："全球经济、企业倒闭、失业率、远程学习、数字鸿沟、教育技术"
+思考："问题明确询问新冠病毒影响的三个方面：经济、教育系统和医疗基础设施。回答涵盖了经济（'全球经济'、'企业倒闭'、'失业率'）和教育系统（'远程学习'、'数字鸿沟'、'教育技术'），但完全省略了对医疗基础设施影响的讨论，而这是问题中明确要求的。"
+通过：否
 
-Question: "请解释人工智能在医疗诊断、自动驾驶和客户服务方面的应用。"
-Answer: "在医疗领域，AI算法可以分析医学影像以检测癌症和其他疾病，准确率有时甚至超过人类专家。自动驾驶技术利用机器学习处理来自雷达、激光雷达和摄像头的数据，实时做出驾驶决策。在客户服务方面，聊天机器人和智能助手能够处理常见问题，分类客户查询，并在必要时将复杂问题转给人工代表。"
-Aspects_Expected: "医疗诊断、自动驾驶、客户服务"
-Aspects_Provided: "医学影像分析、癌症检测、雷达数据处理、激光雷达数据处理、摄像头数据处理、实时驾驶决策、聊天机器人、智能助手、客户查询分类"
-Think: "问题明确要求解释人工智能在三个领域的应用：医疗诊断、自动驾驶和客户服务。回答虽然使用了不同的术语，但涵盖了所有三个方面：医疗诊断（讨论了'医学影像分析'和'癌症检测'），自动驾驶（包括'雷达数据处理'、'激光雷达数据处理'、'摄像头数据处理'和'实时驾驶决策'），以及客户服务（提到了'聊天机器人'、'智能助手'和'客户查询分类'）。尽管使用了不同的表述，但所有明确提及的方面都得到了全面覆盖。"
-Pass: true
+问题："请解释人工智能在医疗诊断、自动驾驶和客户服务方面的应用。"
+回答："在医疗领域，AI算法可以分析医学影像以检测癌症和其他疾病，准确率有时甚至超过人类专家。自动驾驶技术利用机器学习处理来自雷达、激光雷达和摄像头的数据，实时做出驾驶决策。在客户服务方面，聊天机器人和智能助手能够处理常见问题，分类客户查询，并在必要时将复杂问题转给人工代表。"
+预期方面："医疗诊断、自动驾驶、客户服务"
+提供方面："医学影像分析、癌症检测、雷达数据处理、激光雷达数据处理、摄像头数据处理、实时驾驶决策、聊天机器人、智能助手、客户查询分类"
+思考："问题明确要求解释人工智能在三个领域的应用：医疗诊断、自动驾驶和客户服务。回答虽然使用了不同的术语，但涵盖了所有三个方面：医疗诊断（讨论了'医学影像分析'和'癌症检测'），自动驾驶（包括'雷达数据处理'、'激光雷达数据处理'、'摄像头数据处理'和'实时驾驶决策'），以及客户服务（提到了'聊天机器人'、'智能助手'和'客户查询分类'）。尽管使用了不同的表述，但所有明确提及的方面都得到了全面覆盖。"
+通过：是
 
-Question: "Comment les changements climatiques affectent-ils la production agricole, les écosystèmes marins et la santé publique dans les régions côtières?"
-Answer: "Les variations de température et de précipitations modifient les cycles de croissance des cultures et la distribution des ravageurs agricoles, nécessitant des adaptations dans les pratiques de culture. Dans les océans, l'acidification et le réchauffement des eaux entraînent le blanchissement des coraux et la migration des espèces marines vers des latitudes plus froides, perturbant les chaînes alimentaires existantes."
-Aspects_Expected: "production agricole, écosystèmes marins, santé publique"
-Aspects_Provided: "cycles de croissance, distribution des ravageurs, adaptations des pratiques de culture, acidification des océans, réchauffement des eaux, blanchissement des coraux, migration des espèces marines, perturbation des chaînes alimentaires"
-Think: "La question demande explicitement les effets du changement climatique sur trois aspects: la production agricole, les écosystèmes marins et la santé publique dans les régions côtières. La réponse aborde la production agricole (en discutant des 'cycles de croissance', de la 'distribution des ravageurs' et des 'adaptations des pratiques de culture') et les écosystèmes marins (en couvrant 'l'acidification des océans', le 'réchauffement des eaux', le 'blanchissement des coraux', la 'migration des espèces marines' et la 'perturbation des chaînes alimentaires'). Cependant, elle omet complètement toute discussion sur les effets sur la santé publique dans les régions côtières, qui était explicitement demandée dans la question."
-Pass: false
-</examples>
-`,
+问题："气候变化如何影响沿海地区的农业生产、海洋生态系统和公共健康？"
+回答："温度和降水的变化改变了作物生长周期和农业害虫分布，需要在耕作实践中进行调整。在海洋中，海水酸化和变暖导致珊瑚白化和海洋物种向更冷纬度迁移，扰乱了现有的食物链。"
+预期方面："农业生产、海洋生态系统、公共健康"
+提供方面："生长周期、害虫分布、耕作实践调整、海水酸化、海水变暖、珊瑚白化、海洋物种迁移、食物链扰乱"
+思考："问题明确要求气候变化对三个方面的影响：农业生产、海洋生态系统和公共健康。回答涵盖了农业生产（讨论了'生长周期'、'害虫分布'和'耕作实践调整'）和海洋生态系统（涵盖了'海水酸化'、'海水变暖'、'珊瑚白化'、'海洋物种迁移'和'食物链扰乱'）。然而，它完全忽略了对沿海地区公共健康影响的讨论，而这是问题中明确要求的。"
+通过：否
+</示例>`,
     user: `
-Question: ${question}
-Answer: ${answer}
+问题: ${question}
+回答: ${answer}
 
-Please look at my answer and think.
+请查看我的回答并思考。
 `
   }
 }
@@ -462,232 +461,232 @@ function getContentRichnessPrompt(question: string, answer: string): PromptPair 
 
 function getQuestionEvaluationPrompt(question: string): PromptPair {
   return {
-    system: `You are an evaluator that determines if a question requires definitive, freshness, plurality, completeness, and/or content_richness checks.
+    system: `您是一位评估专家，负责判断问题是否需要确定性、新鲜度、复数性、完整性和/或内容丰富度检查。
 
-<evaluation_types>
-definitive - Checks if the question requires a definitive answer or if uncertainty is acceptable (open-ended, speculative, discussion-based)
-freshness - Checks if the question is time-sensitive or requires very recent information
-plurality - Checks if the question asks for multiple items, examples, or a specific count or enumeration
-completeness - Checks if the question explicitly mentions multiple named elements that all need to be addressed
-content_richness - Checks if the question requires a detailed, in-depth response with substantial word count and well-structured paragraphs
-</evaluation_types>
+<评估类型>
+确定性(definitive) - 检查问题是否需要确定性答案，或者是否可以接受不确定性（开放式、推测性、讨论式问题）
+新鲜度(freshness) - 检查问题是否对时间敏感或需要非常近期的信息
+复数性(plurality) - 检查问题是否要求多个项目、例子或特定数量的枚举
+完整性(completeness) - 检查问题是否明确提及多个命名元素，这些元素都需要被涵盖
+内容丰富度(content_richness) - 检查问题是否需要详细、深入的回答，具有大量字数和结构良好的段落
+</评估类型>
 
-<rules>
-1. Definitive Evaluation:
-   - Required for ALMOST ALL questions - assume by default that definitive evaluation is needed
-   - Not required ONLY for questions that are genuinely impossible to evaluate definitively
-   - Examples of impossible questions: paradoxes, questions beyond all possible knowledge
-   - Even subjective-seeming questions can be evaluated definitively based on evidence
-   - Future scenarios can be evaluated definitively based on current trends and information
-   - Look for cases where the question is inherently unanswerable by any possible means
+<规则>
+1. 确定性评估：
+   - 几乎所有问题都需要 - 默认假设需要确定性评估
+   - 只有在问题确实无法确定性评估的情况下才不需要
+   - 无法确定性评估的问题示例：悖论、超出所有可能知识范围的问题
+   - 即使看似主观的问题也可以基于证据进行确定性评估
+   - 未来场景可以基于当前趋势和信息进行确定性评估
+   - 寻找那些本质上无法通过任何可能方式回答的情况
 
-2. Freshness Evaluation:
-   - Required for questions about current state, recent events, or time-sensitive information
-   - Required for: prices, versions, leadership positions, status updates
-   - Look for terms: "current", "latest", "recent", "now", "today", "new"
-   - Consider company positions, product versions, market data time-sensitive
+2. 新鲜度评估：
+   - 适用于关于当前状态、近期事件或时间敏感信息的问题
+   - 适用于：价格、版本、领导职位、状态更新
+   - 寻找术语："当前"、"最新"、"近期"、"现在"、"今天"、"新"
+   - 将公司职位、产品版本、市场数据视为时间敏感
 
-3. Plurality Evaluation:
-   - ONLY apply when completeness check is NOT triggered
-   - Required when question asks for multiple examples, items, or specific counts
-   - Check for: numbers ("5 examples"), list requests ("list the ways"), enumeration requests
-   - Look for: "examples", "list", "enumerate", "ways to", "methods for", "several"
-   - Focus on requests for QUANTITY of items or examples
+3. 复数性评估：
+   - 仅在不触发完整性检查时应用
+   - 适用于问题要求多个例子、项目或特定数量
+   - 检查：数字（"5个例子"）、列表请求（"列出方法"）、枚举请求
+   - 寻找："例子"、"列表"、"枚举"、"方法"、"方式"、"几个"
+   - 关注项目或例子的数量要求
 
-4. Completeness Evaluation:
-   - Takes precedence over plurality check - if completeness applies, set plurality to false
-   - Required when question EXPLICITLY mentions multiple named elements that all need to be addressed
-   - This includes:
-     * Named aspects or dimensions: "economic, social, and environmental factors"
-     * Named entities: "Apple, Microsoft, and Google", "Biden and Trump"
-     * Named products: "iPhone 15 and Samsung Galaxy S24"
-     * Named locations: "New York, Paris, and Tokyo"
-     * Named time periods: "Renaissance and Industrial Revolution"
-   - Look for explicitly named elements separated by commas, "and", "or", bullets
-   - Example patterns: "comparing X and Y", "differences between A, B, and C", "both P and Q"
-   - DO NOT trigger for elements that aren't specifically named
+4. 完整性评估：
+   - 优先于复数性检查 - 如果适用完整性，则将复数性设为false
+   - 适用于问题明确提及多个命名元素，这些元素都需要被涵盖
+   - 这包括：
+     * 命名的方面或维度："经济、社会和环境因素"
+     * 命名的实体："苹果、微软和谷歌"、"拜登和特朗普"
+     * 命名的产品："iPhone 15和三星Galaxy S24"
+     * 命名的地点："纽约、巴黎和东京"
+     * 命名的时期："文艺复兴和工业革命"
+   - 寻找由逗号、"和"、"或"、项目符号分隔的明确命名元素
+   - 示例模式："比较X和Y"、"A、B和C之间的区别"、"P和Q两者"
+   - 不要触发未明确命名的元素
 
-5. Content Richness Evaluation:
-   - Required for questions that explicitly request detailed, in-depth, or comprehensive responses
-   - Required when specific word count is mentioned: "at least 1000 words", "detailed report"
-   - Look for terms: "detailed", "comprehensive", "in-depth", "thorough", "elaborate"
-   - Required for complex topics that inherently need substantial explanation
-   - Look for academic or professional context clues that suggest formal, detailed response
-   - Required when question asks for analysis, explanation, or discussion of complex topics
-</rules>
+5. 内容丰富度评估：
+   - 适用于明确要求详细、深入或全面回答的问题
+   - 适用于提及特定字数的情况："至少1000字"、"详细报告"
+   - 寻找术语："详细"、"全面"、"深入"、"彻底"、"详尽"
+   - 适用于本质上需要大量解释的复杂主题
+   - 寻找暗示需要正式、详细回答的学术或专业上下文线索
+   - 适用于要求分析、解释或讨论复杂主题的问题
+</规则>
 
-<examples>
-<example-1>
+<示例>
+<示例-1>
 谁发明了微积分？牛顿和莱布尼兹各自的贡献是什么？
-<think>
+<思考>
 这是关于微积分历史的问题，不涉及需要最新信息的内容。问题明确提到了牛顿和莱布尼兹两位数学家，要求分析他们各自的贡献，所以需要全面评估这两个特定的方面。这个问题涉及历史事实，有明确的学术研究可以参考，因此需要确定性评估。
-</think>
-<output>
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": false,
 "needsCompleteness": true,
-</output>
-</example-1>
+</输出>
+</示例-1>
 
-<example-2>
-fam PLEASE help me calculate the eigenvalues of this 4x4 matrix ASAP!! [matrix details] got an exam tmrw 😭
-<think>
-This is a mathematical question about eigenvalues which doesn't change over time, so no need for recent information. A 4x4 matrix has multiple eigenvalues, so this requires identifying several distinct values. This is a pure mathematics problem with precise, verifiable solutions that can be definitively evaluated. The question asks for calculation of eigenvalues only, not addressing multiple distinct topics.
-</think>
-<output>
+<示例-2>
+兄弟帮我计算一下这个4x4矩阵的特征值吧！！[矩阵详情] 明天就要考试了😭
+<思考>
+这是一个数学问题，关于特征值的计算，不随时间变化，因此不需要最新信息。4x4矩阵有多个特征值，所以需要识别多个不同的值。这是一个纯数学问题，有精确、可验证的解决方案，可以进行确定性评估。问题只要求计算特征值，不涉及多个不同主题的讨论。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": true,
 "needsCompleteness": false,
-</output>
-</example-2>
+</输出>
+</示例-2>
 
-<example-3>
-Quelles sont les principales différences entre le romantisme et le réalisme dans la littérature du 19ème siècle?
-<think>
-C'est une question sur l'histoire littéraire, donc aucun besoin d'informations récentes. La question mentionne spécifiquement deux mouvements: le romantisme et le réalisme. Je dois évaluer ces deux éléments nommés, donc l'exhaustivité est importante ici. Cette question porte sur des concepts littéraires établis avec des caractéristiques documentées, donc une évaluation définitive est possible. La question ne demande pas une liste ou énumération multiple au-delà des deux mouvements spécifiés.
-</think>
-<output>
+<示例-3>
+19世纪文学中浪漫主义和现实主义的主要区别是什么？
+<思考>
+这是一个关于文学史的问题，不需要最新信息。问题特别提到了两个流派：浪漫主义和现实主义。我需要评估这两个命名元素，因此完整性在这里很重要。这个问题涉及有文档记录的既定文学概念，可以进行确定性评估。问题没有要求超出两个指定流派的多个项目列表或枚举。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": false,
 "needsCompleteness": true,
-</output>
-</example-3>
+</输出>
+</示例-3>
 
-<example-4>
-Shakespeare の最も有名な悲劇を5つ挙げ、簡単にあらすじを説明してください。
-<think>
-シェイクスピアの悲劇についての質問であり、時事的な情報は不要。「5つ挙げ」という指定があるため、複数の項目が求められている。「最も有名な」という基準は学術的コンセンサスや文化的重要性に基づいて判断できるため、確定的な評価が可能。特定の作品を分析するよう求められているわけではなく、複数の作品を列挙することが主な要件。
-</think>
-<output>
+<示例-4>
+列举莎士比亚最著名的5部悲剧，并简要说明其情节。
+<思考>
+这是关于莎士比亚悲剧的问题，不需要时事性信息。"列举5部"表明需要多个项目，因此需要复数性评估。"最著名的"这一标准可以基于学术共识和文化重要性进行确定性判断。问题不是要求分析特定作品，而是列举多部作品，这是主要要求。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": true,
 "needsCompleteness": false,
-</output>
-</example-4>
+</输出>
+</示例-4>
 
-<example-5>
-What are the current interest rates for mortgage loans from Bank of America, Wells Fargo, and Chase Bank in the US?
-<think>
-This question asks about "current" interest rates, so it clearly requires up-to-date information. The query specifically names three banks: Bank of America, Wells Fargo, and Chase Bank. Each of these named entities must be addressed, making completeness necessary. This question seeks factual financial data that can be objectively verified, so definitive evaluation is needed. The question isn't asking for multiple types of information beyond the specified banks.
-</think>
-<output>
+<示例-5>
+美国美国银行、富国银行和大通银行的当前抵押贷款利率是多少？
+<思考>
+这个问题询问"当前"利率，显然需要最新信息。问题特别提到了三家银行：美国银行、富国银行和大通银行。每个命名实体都必须被涵盖，因此需要完整性评估。这个问题寻求可客观验证的事实金融数据，需要确定性评估。问题没有要求超出指定银行的多种信息类型。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": true,
 "needsPlurality": false,
 "needsCompleteness": true,
-</output>
-</example-5>
+</输出>
+</示例-5>
 
-<example-6>
-2025年に注目すべき人工知能の3つのトレンドは何ですか？
-<think>
-これは将来のAIトレンドに関する質問なので、最新の情報が必要。「3つの」という明確な数を指定しているため、複数の項目が求められている。未来の予測だが、現在のAI開発動向や研究から推測できる範囲であり、確定的な評価が可能。特定の側面について言及しておらず、トレンドの列挙が主な要件なので、複数性のほうが重要。
-</think>
-<output>
+<示例-6>
+2025年值得关注的3个人工智能趋势是什么？
+<思考>
+这是关于未来AI趋势的问题，需要最新信息。"3个"明确指定了数量，表明需要多个项目，因此需要复数性评估。虽然是关于未来的预测，但可以基于当前的AI发展趋势和研究进行确定性评估。问题没有提到需要覆盖的特定方面，重点是趋势的多样性，所以复数性比完整性更重要。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": true,
 "needsPlurality": true,
 "needsCompleteness": false,
-</output>
-</example-6>
+</输出>
+</示例-6>
 
-<example-7>
-Was sind die besten Strategien für nachhaltiges Investieren in der heutigen Wirtschaft?
-<think>
-Diese Frage bezieht sich auf die "heutige Wirtschaft", daher sind aktuelle Informationen erforderlich. "Strategien" steht im Plural, was auf die Notwendigkeit mehrerer Beispiele hindeutet. Obwohl "beste" subjektiv klingen mag, lässt sich die Frage anhand von Rendite-Daten, Risikobewertungen und Nachhaltigkeitskriterien definitiv evaluieren. Es werden keine spezifischen Aspekte genannt, die alle behandelt werden müssen - der Fokus liegt auf der Vielfalt der Strategien.
-</think>
-<output>
+<示例-7>
+当前经济环境下可持续投资的最佳策略有哪些？
+<思考>
+这个问题提到"当前经济环境"，因此需要最新信息。"策略"使用复数形式，表明需要多个例子。虽然"最佳"听起来可能是主观的，但可以基于收益数据、风险评估和可持续性标准进行确定性评估。问题没有提到需要全面覆盖的特定方面，重点是策略的多样性。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": true,
 "needsPlurality": true,
 "needsCompleteness": false,
-</output>
-</example-7>
+</输出>
+</示例-7>
 
-<example-8>
+<示例-8>
 请解释赤壁之战的历史背景、主要参与者以及战略意义，这对中国历史产生了什么影响？
-<think>
+<思考>
 这是关于历史事件的问题，不需要最新信息。问题明确列出了多个需要评估的方面：历史背景、主要参与者、战略意义和历史影响。这些都是特定的历史课题，需要完整地覆盖。关于历史事件的问题有明确的史料记载和学术研究，可以进行确定性评估。
-</think>
-<output>
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": false,
 "needsCompleteness": true,
-</output>
-</example-8>
+</输出>
+</示例-8>
 
-<example-9>
-How might artificial intelligence transform the healthcare industry over the next decade?
-<think>
-This question asks about future developments that require recent AI and healthcare information to properly evaluate. The query is about transformations (plural) suggesting multiple changes should be identified. While it concerns future trends, the patterns can be evaluated definitively based on current research, development pipelines, and industry analyses. No specific aspects of healthcare are mentioned that must all be addressed, so plurality is more relevant than completeness.
-</think>
-<output>
+<示例-9>
+人工智能在未来十年可能如何改变医疗行业？
+<思考>
+这个问题询问未来发展，需要关于AI和医疗的最新信息进行适当评估。问题使用"改变"（复数形式），表明应该识别多种变化。虽然涉及未来趋势，但可以基于当前研究、发展管道和行业分析进行确定性评估。问题没有提到必须全面覆盖的医疗特定方面，因此复数性比完整性更相关。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": true,
 "needsPlurality": true,
 "needsCompleteness": false,
-</output>
-</example-9>
+</输出>
+</示例-9>
 
-<example-10>
-What do you think is the best approach to learning a new language as an adult?
-<think>
-This question about language learning does not require time-sensitive information as fundamental language acquisition principles remain relatively stable. The phrasing suggests looking for multiple elements or methods that constitute an effective approach, indicating plurality. Though the question uses subjective language ("what do you think"), it can be evaluated definitively using linguistic research and proven methodologies. No specific language learning aspects are explicitly named that must all be covered.
-</think>
-<output>
+<示例-10>
+您认为成人学习新语言的最佳方法是什么？
+<思考>
+这个关于语言学习的问题不需要时效性信息，因为基本的语言习得原则相对稳定。问题措辞暗示需要寻找构成有效方法的多个元素或方法，表明需要复数性。虽然问题使用主观语言（"您认为"），但可以基于语言学研究和已证实的方法论进行确定性评估。问题没有明确提到必须全面覆盖的特定语言学习方面。
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": true,
 "needsCompleteness": false,
-</output>
-</example-10>
+</输出>
+</示例-10>
 
-<example-11>
-If a tree falls in a forest with absolutely no observers, instruments, or any possible way to detect it, does it make a sound?
-<think>
-This is a classic philosophical paradox that is inherently unanswerable in a definitive way. The question deliberately constructs a scenario that removes all possible means of verification, making it logically impossible to evaluate. This kind of question represents one of the rare cases where a definitive evaluation is truly impossible. The question doesn't involve recent events, doesn't request multiple items, and doesn't specify multiple elements that must be addressed.
-</think>
-<output>
+<示例-11>
+如果一棵树在森林中倒下，绝对没有观察者、仪器或任何可能的方式检测到它，它会发出声音吗？
+<思考>
+这是一个经典的哲学悖论，本质上无法以确定性方式回答。问题故意构建了一个排除所有可能验证手段的场景，使其在逻辑上无法评估。这类问题代表了真正无法确定性评估的罕见情况。问题不涉及近期事件，不要求多个项目，也没有指定必须涵盖的多个元素。
+</思考>
+<输出>
 "needsDefinitive": false,
 "needsFreshness": false,
 "needsPlurality": false,
 "needsCompleteness": false,
-</output>
-</example-11>
+</输出>
+</示例-11>
 
-<example-12>
+<示例-12>
 请根据大纲编写一份项目可行性报告，每个小节不少于1000字。
-<think>
+<思考>
 这个问题明确要求"每个小节不少于1000字"，这是一个明确的字数要求，需要进行内容丰富度评估。问题要求编写一份项目可行性报告，这是一个需要详细、全面分析的专业文档，需要确定性评估以确保内容准确。没有提到需要最新信息，也没有要求列举多个项目或明确提到需要覆盖的多个方面，因此不需要新鲜度、复数性和完整性评估。
-</think>
-<o>
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": false,
 "needsPlurality": false,
 "needsCompleteness": false,
 "needsContentRichness": true
-</o>
-</example-12>
+</输出>
+</示例-12>
 
-<example-13>
+<示例-13>
 详细分析当前中美贸易关系的现状、问题及未来发展趋势。
-<think>
+<思考>
 这个问题要求"详细分析"，表明需要深入、全面的回答，因此需要内容丰富度评估。"当前"表明需要最新信息，因此需要新鲜度评估。问题明确提到三个方面：现状、问题及未来发展趋势，这些是需要全面覆盖的命名元素，因此需要完整性评估。作为一个基于事实的地缘政治分析，需要确定性评估以确保内容准确。
-</think>
-<o>
+</思考>
+<输出>
 "needsDefinitive": true,
 "needsFreshness": true,
 "needsPlurality": false,
 "needsCompleteness": true,
 "needsContentRichness": true
-</o>
-</example-13>
-</examples>
+</输出>
+</示例-13>
+</示例>
 
 `,
     user:

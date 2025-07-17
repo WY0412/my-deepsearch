@@ -1105,108 +1105,275 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
 
     schema = SchemaGen.getAgentSchema(false, false, true, false, false, question);
     msgWithKnowledge = composeMsgs(messages, allKnowledge, question, finalAnswerPIP);
-    const result = await generator.generateObject({
-      model: 'agentBeastMode',
-      schema,
-      system,
-      messages: msgWithKnowledge,
-      numRetries: 2
-    });
-    thisStep = {
-      action: result.object.action,
-      think: result.object.think,
-      ...result.object[result.object.action]
-    } as AnswerAction;
-    // await updateReferences(thisStep, allURLs);
+    
+    try {
+      const result = await generator.generateObject({
+        model: 'agentBeastMode',
+        schema,
+        system,
+        messages: msgWithKnowledge,
+        numRetries: 2
+      });
+      
+      // 确保result.object存在且有必要的属性
+      if (!result?.object || typeof result.object !== 'object') {
+        // 创建一个安全的默认对象
+        logWarning('Beast mode generation returned invalid object, using default answer', { result });
+        thisStep = {
+          action: 'answer',
+          think: '由于处理错误，系统提供了默认回答。',
+          answer: question || '您的请求' + '已收到，但处理过程中遇到了技术问题。',
+          references: [],
+          isFinal: true
+        } as AnswerAction;
+      } else {
+        // 确保action属性存在
+        const action = result.object.action || 'answer';
+        // 确保对应action的属性对象存在
+        const actionProps = (result.object[action] || {}) as Record<string, any>;
+        
+        thisStep = {
+          action: action,
+          think: result.object.think || '',
+          ...actionProps,
+          // 确保answer属性存在（如果action是answer）
+          ...(action === 'answer' && !actionProps.answer ? { answer: '系统无法生成有效回答。' } : {})
+        } as StepAction;
+      }
+    } catch (error) {
+      // 处理异常情况
+      logError('Beast mode generation failed:', { error });
+      thisStep = {
+        action: 'answer',
+        think: '处理请求时发生错误。',
+        answer: question ? `关于"${question}"的请求处理过程中遇到了技术问题。` : '处理您的请求时遇到了技术问题。',
+        references: [],
+        isFinal: true
+      } as AnswerAction;
+    }
+    
+    // 确保thisStep是一个有效的AnswerAction
+    if (thisStep.action === 'answer' && !thisStep.answer) {
+      (thisStep as AnswerAction).answer = '无法生成回答内容。';
+    }
+    
+    // 确保isFinal标志被设置
     (thisStep as AnswerAction).isFinal = true;
     context.actionTracker.trackAction({ totalStep, thisStep, gaps });
   }
 
   const answerStep = thisStep as AnswerAction;
 
+  // 确保answerStep是有效对象且具有必要的属性
+  if (!answerStep || typeof answerStep !== 'object') {
+    logError('Invalid answerStep object', { thisStep });
+    return {
+      result: {
+        action: 'answer',
+        answer: '处理请求时发生错误。',
+        think: '',
+        references: [],
+        isFinal: true,
+        mdAnswer: '处理请求时发生错误。'
+      } as AnswerAction,
+      context,
+      visitedURLs: [],
+      readURLs: [],
+      allURLs: [],
+      imageReferences: undefined,
+    };
+  }
+
+  // 确保answerStep.answer存在
+  if (!answerStep.answer) {
+    answerStep.answer = '无法生成有效回答。';
+  }
+
   if (trivialQuestion) {
     answerStep.mdAnswer = buildMdFromAnswer(answerStep);
   } else if (!answerStep.isAggregated) {
-    // 添加日志记录，打印出finalizer处理前的答案
-    logInfo('Pre-finalizer answer:', { 
-      answerLength: answerStep.answer.length,
-      answerPreview: answerStep.answer.substring(0, 200) + '...'
-    });
-    
-    answerStep.answer = repairMarkdownFinal(
-      convertHtmlTablesToMd(
-        fixBadURLMdLinks(
-          fixCodeBlockIndentation(
-            repairMarkdownFootnotesOuter(
-              await finalizeAnswer(
-                answerStep.answer,
-                allKnowledge,
-                context,
-                SchemaGen
-              )
-            )
-          ),
-          allURLs)));
-          
-    // 添加日志记录，打印出finalizer处理后的答案
-    logInfo('Post-finalizer answer:', { 
-      answerLength: answerStep.answer.length,
-      answerPreview: answerStep.answer.substring(0, 200) + '...'
-    });
-
-    const { answer, references } = await buildReferences(
-      answerStep.answer,
-      allWebContents,
-      context,
-      SchemaGen,
-      80,
-      maxRef,
-      minRelScore,
-      onlyHostnames
-    );
-
-    answerStep.answer = answer;
-    answerStep.references = references || []; // 确保references不为undefined
-    await updateReferences(answerStep, allURLs)
-    answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
-
-    if (imageObjects?.length && withImages) {
+    try {
+      // 添加日志记录，打印出finalizer处理前的答案
+      logInfo('Pre-finalizer answer:', { 
+        answerLength: answerStep.answer.length,
+        answerPreview: answerStep.answer.substring(0, 200) + '...'
+      });
+      
+      // 使用finalizeAnswer处理答案
+      let finalizedAnswer = '';
       try {
-        answerStep.imageReferences = await buildImageReferences(answerStep.answer, imageObjects, context, SchemaGen);
-        logDebug('Image references built:', { 
-          imageReferences: answerStep.imageReferences?.map(i => ({ 
-            url: i?.url, 
-            score: i?.relevanceScore, 
-            answerChunk: i?.answerChunk 
-          })) || []
-        });
+        finalizedAnswer = await finalizeAnswer(
+          answerStep.answer,
+          allKnowledge || [],
+          context,
+          SchemaGen
+        );
       } catch (error) {
-        logError('Error building image references:', { error });
-        answerStep.imageReferences = [];
+        logError('Error in finalizeAnswer:', { error });
+        finalizedAnswer = answerStep.answer; // 出错时使用原始答案
       }
+      
+      // 确保finalizedAnswer不为undefined
+      if (!finalizedAnswer) finalizedAnswer = answerStep.answer;
+      
+      // 应用各种修复函数
+      answerStep.answer = repairMarkdownFinal(
+        convertHtmlTablesToMd(
+          fixBadURLMdLinks(
+            fixCodeBlockIndentation(
+              repairMarkdownFootnotesOuter(finalizedAnswer)
+            ),
+            allURLs || {})));
+            
+      // 添加日志记录，打印出finalizer处理后的答案
+      logInfo('Post-finalizer answer:', { 
+        answerLength: answerStep.answer.length,
+        answerPreview: answerStep.answer.substring(0, 200) + '...'
+      });
+
+      // 构建引用
+      let references: Array<Reference> = [];
+      try {
+        const buildReferencesResult = await buildReferences(
+          answerStep.answer,
+          allWebContents || {},
+          context,
+          SchemaGen,
+          80,
+          maxRef,
+          minRelScore,
+          onlyHostnames || []
+        );
+        
+        // 确保返回结果有效
+        if (buildReferencesResult && typeof buildReferencesResult === 'object') {
+          if (typeof buildReferencesResult.answer === 'string') {
+            answerStep.answer = buildReferencesResult.answer;
+          }
+          references = Array.isArray(buildReferencesResult.references) ? buildReferencesResult.references : [];
+        }
+      } catch (error) {
+        logError('Error in buildReferences:', { error });
+        // 出错时使用空引用数组
+        references = [];
+      }
+
+      answerStep.answer = answerStep.answer || '无法生成有效回答。';
+      answerStep.references = references || []; // 确保references不为undefined
+      
+      // 更新引用
+      try {
+        await updateReferences(answerStep, allURLs || {});
+      } catch (error) {
+        logError('Error in updateReferences:', { error });
+        // 确保引用数组存在
+        answerStep.references = answerStep.references || [];
+      }
+      
+      // 构建markdown答案
+      try {
+        answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
+      } catch (error) {
+        logError('Error building markdown answer:', { error });
+        answerStep.mdAnswer = answerStep.answer; // 出错时直接使用answer作为mdAnswer
+      }
+
+      // 处理图像引用
+      if (imageObjects?.length && withImages) {
+        try {
+          answerStep.imageReferences = await buildImageReferences(answerStep.answer, imageObjects, context, SchemaGen);
+          logDebug('Image references built:', { 
+            imageReferences: answerStep.imageReferences?.map(i => ({ 
+              url: i?.url, 
+              score: i?.relevanceScore, 
+              answerChunk: i?.answerChunk 
+            })) || []
+          });
+        } catch (error) {
+          logError('Error building image references:', { error });
+          answerStep.imageReferences = [];
+        }
+      }
+    } catch (error) {
+      // 捕获整个处理流程中的任何错误
+      logError('Error in answer processing pipeline:', { error });
+      // 确保有基本的回答内容
+      answerStep.answer = answerStep.answer || '处理回答时发生错误。';
+      answerStep.mdAnswer = answerStep.mdAnswer || answerStep.answer;
+      answerStep.references = answerStep.references || [];
     }
   } else if (answerStep.isAggregated) {
-    answerStep.answer = candidateAnswers.join('\n\n'); // await reduceAnswers(candidateAnswers, context, SchemaGen);
-    answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
-    if (withImages && answerStep.imageReferences?.length) {
-      const sortedImages = answerStep.imageReferences.sort((a, b) => ((b?.relevanceScore || 0) - (a?.relevanceScore || 0)));
-      logDebug('[agent] all sorted image references:', { count: sortedImages?.length || 0 });
-      const dedupImages = dedupImagesWithEmbeddings(sortedImages as ImageObject[], []);
-      const filteredImages = filterImages(sortedImages, dedupImages);
-      logDebug('[agent] filtered images:', { count: filteredImages?.length || 0 });
-      answerStep.imageReferences = filteredImages?.slice(0, 10) || []; // limit to 10 images
+    try {
+      // 确保candidateAnswers是数组
+      const validCandidateAnswers = Array.isArray(candidateAnswers) ? candidateAnswers : [];
+      answerStep.answer = validCandidateAnswers.join('\n\n'); // await reduceAnswers(candidateAnswers, context, SchemaGen);
+      
+      try {
+        answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
+      } catch (error) {
+        logError('Error building aggregated markdown answer:', { error });
+        answerStep.mdAnswer = answerStep.answer;
+      }
+      
+      if (withImages && answerStep.imageReferences?.length) {
+        try {
+          const sortedImages = answerStep.imageReferences.sort((a, b) => ((b?.relevanceScore || 0) - (a?.relevanceScore || 0)));
+          logDebug('[agent] all sorted image references:', { count: sortedImages?.length || 0 });
+          const dedupImages = dedupImagesWithEmbeddings(sortedImages as ImageObject[], []);
+          const filteredImages = filterImages(sortedImages, dedupImages);
+          logDebug('[agent] filtered images:', { count: filteredImages?.length || 0 });
+          answerStep.imageReferences = filteredImages?.slice(0, 10) || []; // limit to 10 images
+        } catch (error) {
+          logError('Error processing image references in aggregated mode:', { error });
+          answerStep.imageReferences = [];
+        }
+      }
+    } catch (error) {
+      logError('Error in aggregated answer processing:', { error });
+      // 确保有基本的回答内容
+      answerStep.answer = answerStep.answer || '处理聚合回答时发生错误。';
+      answerStep.mdAnswer = answerStep.mdAnswer || answerStep.answer;
     }
   }
 
+  // 确保最终的answerStep具有所有必要属性
+  if (!answerStep.answer) answerStep.answer = '无法生成有效回答。';
+  if (!answerStep.mdAnswer) answerStep.mdAnswer = answerStep.answer;
+  if (!answerStep.references) answerStep.references = [];
+
   // max return 300 urls
   const returnedURLs = weightedURLs?.slice(0, numReturnedURLs)?.filter(r => r?.url)?.map(r => r.url) || [];
+  
+  // 确保thisStep是有效对象
+  if (!thisStep || typeof thisStep !== 'object') {
+    logError('Invalid thisStep object at return point', { thisStep });
+    thisStep = {
+      action: 'answer',
+      answer: '处理请求时发生错误。',
+      think: '',
+      references: [],
+      isFinal: true,
+      mdAnswer: '处理请求时发生错误。'
+    } as AnswerAction;
+  }
+  
+  // 确保context是有效对象
+  let safeContext = context;
+  if (!safeContext || typeof safeContext !== 'object') {
+    logError('Invalid context object at return point', { context });
+    safeContext = {
+      tokenTracker: new TokenTracker(),
+      actionTracker: new ActionTracker()
+    };
+  }
+  
   return {
     result: thisStep,
-    context,
+    context: safeContext,
     visitedURLs: returnedURLs, // deprecated
     readURLs: visitedURLs?.filter(url => !badURLs.includes(url)) || [],
     allURLs: weightedURLs?.map(r => r?.url) || [],
-    imageReferences: withImages ? (thisStep as AnswerAction).imageReferences : undefined,
+    imageReferences: withImages ? ((thisStep as AnswerAction).imageReferences || undefined) : undefined,
   };
 }
 

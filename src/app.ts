@@ -10,6 +10,7 @@ import {
   Model, StepAction, VisitAction,
   SearchAction,
 } from './types';
+import { CoreMessage } from 'ai';
 import { TokenTracker } from "./utils/token-tracker";
 import { ActionTracker } from "./utils/action-tracker";
 import { ObjectGeneratorSafe } from "./utils/safe-generator";
@@ -201,6 +202,23 @@ async function emitRemainingContent(
     }],
   };
   res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+}
+
+// 在已有函数之后，StreamingState接口之前添加这个新函数
+function isConversationNamingRequest(messages: Array<CoreMessage>): boolean {
+  if (!messages || messages.length === 0) return false;
+  
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage.role !== 'user' || typeof lastMessage.content !== 'string') return false;
+  
+  const content = lastMessage.content.toLowerCase();
+  
+  // 检查是否包含对话命名的特征词
+  return (
+    content.includes('based on the chat history, give this conversation a name') ||
+    content.includes('name this conversation') ||
+    (content.includes('give this conversation a name') && content.includes('characters'))
+  );
 }
 
 interface StreamingState {
@@ -620,8 +638,8 @@ app.post('/v1/chat/completions', validationRules, (async (req: Request, res: Res
       context,
       body.messages,
       body.max_returned_urls,
-      body.no_direct_answer,
-      body.boost_hostnames?.map(i => normalizeHostName(i)),
+      !isConversationNamingRequest(body.messages), // 对话命名请求不强制思考再回答
+      ['http://www.jianbiaoku.com', 'https://std.samr.gov.cn'].map(i => normalizeHostName(i)), // 固定为建标库和全国标准信息公共服务平台域名
       body.bad_hostnames?.map(i => normalizeHostName(i)),
       body.only_hostnames?.map(i => normalizeHostName(i)),
       body.max_annotations,
@@ -632,6 +650,30 @@ app.post('/v1/chat/completions', validationRules, (async (req: Request, res: Res
       body.with_images,
       body.team_size
     )
+    // const {
+    //   result: finalStep,
+    //   visitedURLs,
+    //   readURLs,
+    //   allURLs,
+    //   imageReferences,
+    // } = await getResponse(undefined,
+    //   tokenBudget,
+    //   maxBadAttempts,
+    //   context,
+    //   body.messages,
+    //   body.max_returned_urls,
+    //   !isConversationNamingRequest(body.messages), // 对话命名请求不强制思考再回答
+    //   body.boost_hostnames?.map(i => normalizeHostName(i)),
+    //   body.bad_hostnames?.map(i => normalizeHostName(i)),
+    //   body.only_hostnames?.map(i => normalizeHostName(i)),
+    //   body.max_annotations,
+    //   body.min_annotation_relevance,
+    //   body.language_code,
+    //   body.search_language_code,
+    //   body.search_provider,
+    //   body.with_images,
+    //   body.team_size
+    // )
     let finalAnswer = (finalStep as AnswerAction).mdAnswer;
 
     const annotations = (finalStep as AnswerAction).references?.filter(ref => ref?.url && ref?.title && ref?.exactQuote && ref?.dateTime).map(ref => ({

@@ -486,6 +486,11 @@ export async function getResponse(question?: string,
   let allowRead = true;
   let allowReflect = true;
   let allowCoding = false;
+  
+  // 对于对话命名请求，禁用搜索功能
+  if (!noDirectAnswer) {
+    allowSearch = false;
+  }
   let msgWithKnowledge: CoreMessage[] = [];
   let thisStep: StepAction = { action: 'answer', answer: '', references: [], think: '', isFinal: false };
 
@@ -530,20 +535,26 @@ export async function getResponse(question?: string,
     // }
     if (currentQuestion.trim() === question && totalStep === 1) {
       // only add evaluation for initial question, once at step 1
-      evaluationMetrics[currentQuestion] =
-        (await evaluateQuestion(currentQuestion, context, SchemaGen)).map(e => {
-          return {
-            type: e,
-            numEvalsRequired: maxBadAttempts
-          } as RepeatEvaluationType
-        })
-      // force strict eval for the original question, at last, only once.
-      evaluationMetrics[currentQuestion].push({ type: 'strict', numEvalsRequired: maxBadAttempts });
+      if (noDirectAnswer) {
+        // 只有在需要强制思考的情况下才进行评估
+        evaluationMetrics[currentQuestion] =
+          (await evaluateQuestion(currentQuestion, context, SchemaGen)).map(e => {
+            return {
+              type: e,
+              numEvalsRequired: maxBadAttempts
+            } as RepeatEvaluationType
+          })
+        // force strict eval for the original question, at last, only once.
+        evaluationMetrics[currentQuestion].push({ type: 'strict', numEvalsRequired: maxBadAttempts });
+      } else {
+        // 对话命名等不需要强制思考的请求，跳过评估
+        evaluationMetrics[currentQuestion] = [];
+      }
     } else if (currentQuestion.trim() !== question) {
       evaluationMetrics[currentQuestion] = []
     }
 
-    if (totalStep === 1 && includesEval(evaluationMetrics[currentQuestion], 'freshness')) {
+    if (totalStep === 1 && noDirectAnswer && includesEval(evaluationMetrics[currentQuestion], 'freshness')) {
       // if it detects freshness, avoid direct answer at step 1
       allowAnswer = false;
       allowReflect = false;

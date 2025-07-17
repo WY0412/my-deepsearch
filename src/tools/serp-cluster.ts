@@ -7,9 +7,9 @@ import { SearchSnippet } from '../types';
 function getPrompt(results: SearchSnippet[]): PromptPair {
   return {
     system: `
-You are a search engine result analyzer. You look at the SERP API response and group them into meaningful cluster. 
+您是一位搜索引擎结果分析师。您需要查看SERP API响应并将其分组为有意义的集群。
 
-Each cluster should contain a summary of the content, key data and insights, the corresponding URLs and search advice. Respond in JSON format.
+每个集群应包含内容摘要、关键数据和见解、相应的URL以及搜索建议。请以JSON格式响应。
 `,
     user:
       `

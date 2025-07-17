@@ -57,20 +57,20 @@ export async function repairUnknownChars(mdContent: string, trackers?: TrackerCo
     try {
       const result = await generateText({
         model: getModel('fallback'),
-        system: `You're helping fix a corrupted scanned markdown document that has stains (represented by �). 
-Looking at the surrounding context, determine the original text should be in place of the � symbols.
+        system: `您正在帮助修复一个包含污点（由表示）的受损扫描markdown文档。
+通过查看周围的上下文，确定符号处应该是什么原始文本。
 
-Rules:
-1. ONLY output the exact replacement text - no explanations, quotes, or additional text
-2. Keep your response appropriate to the length of the unknown sequence
-3. Consider the document appears to be in Chinese if that's what the context suggests`,
+规则：
+1. 仅输出准确的替换文本 - 不要解释、引用或添加额外文本
+2. 保持您的回应与未知序列长度相适应
+3. 如果上下文表明文档可能是中文，请考虑这一点`,
         prompt: `
-The corrupted text has ${unknownCount} � mush in a row.
+受损文本中连续出现了${unknownCount}个符号。
 
-On the left of the stains: "${leftContext}"
-On the right of the stains: "${rightContext}"
+污点左侧内容："${leftContext}"
+污点右侧内容："${rightContext}"
 
-So what was the original text between these two contexts?`,
+这两段上下文之间的原始文本是什么？`,
       });
 
       trackers?.tokenTracker.trackUsage('md-fixer', result.usage)

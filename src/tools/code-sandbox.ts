@@ -24,32 +24,32 @@ ${attempt.error ? `Error: ${attempt.error}
 ` : ''}
 `).join('\n');
 
-  const prompt = `You are an expert JavaScript programmer. Your task is to generate JavaScript code to solve the given problem.
+  const prompt = `您是一位专业的JavaScript程序员。您的任务是生成JavaScript代码来解决给定的问题。
 
-<rules>
-1. Generate plain JavaScript code that returns the result directly
-2. You can access any of these available variables directly:
+<规则>
+1. 生成直接返回结果的纯JavaScript代码
+2. 您可以直接访问以下可用变量：
 ${availableVars}
-3. You don't have access to any third party libraries that need to be installed, so you must write complete, self-contained code.
-4. Must have a return statement.
-</rules>
+3. 您无法访问需要安装的第三方库，因此必须编写完整的、自包含的代码。
+4. 必须包含return语句。
+</规则>
 
-${previousAttempts.length > 0 ? `Previous attempts and their errors:
+${previousAttempts.length > 0 ? `以前的尝试及其错误：
 ${previousAttemptsContext}
 ` : ''}
 
-<example>
-Available variables:
-numbers (Array<number>) e.g. [1, 2, 3, 4, 5, 6]
-threshold (number) e.g. 4
+<示例>
+可用变量：
+numbers (Array<number>) 例如 [1, 2, 3, 4, 5, 6]
+threshold (number) 例如 4
 
-Problem: Sum all numbers above threshold
+问题：求所有大于阈值的数字之和
 
-Response:
+响应：
 {
   "code": "return numbers.filter(n => n > threshold).reduce((a, b) => a + b, 0);"
 }
-</example>`;
+</示例>`;
 
   logDebug('Coding prompt', { prompt });
 

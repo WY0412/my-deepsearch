@@ -60,6 +60,12 @@ function BuildMsgsFromKnowledge(knowledge: KnowledgeItem[]): CoreMessage[] {
   // build user, assistant pair messages from knowledge
   const messages: CoreMessage[] = [];
   knowledge.forEach(k => {
+    // 添加空值检查，确保k.question存在
+    if (!k.question) {
+      logWarning('Knowledge item missing question:', { knowledge: k });
+      return; // 跳过这个知识项
+    }
+    
     messages.push({ role: 'user', content: k.question.trim() });
     const aMsg = `
 ${k.updated && (k.type === 'url' || k.type === 'side-info') ? `
@@ -75,7 +81,7 @@ ${k.references[0]}
 ` : ''}
 
 
-${k.answer}
+${k.answer || ''}
       `.trim();
     messages.push({ role: 'assistant', content: removeExtraLineBreaks(aMsg) });
   });
@@ -83,11 +89,15 @@ ${k.answer}
 }
 
 function composeMsgs(messages: CoreMessage[], knowledge: KnowledgeItem[], question: string, finalAnswerPIP?: string[]) {
+  // 添加空值检查
+  if (!messages) messages = [];
+  if (!knowledge) knowledge = [];
+  
   // knowledge always put to front, followed by real u-a interaction
   const msgs = [...BuildMsgsFromKnowledge(knowledge), ...messages];
 
   const userContent = `
-${question}
+${question || ''}
 
 ${finalAnswerPIP?.length ? `
 <答案要求>
@@ -96,7 +106,7 @@ ${finalAnswerPIP?.length ? `
 - 根据评审反馈优化答案质量。
 ${finalAnswerPIP.map((p, idx) => `
 <评审员-${idx + 1}>
-${p}
+${p || ''}
 </评审员-${idx + 1}>
 `).join('\n')}
 </答案要求>` : ''}
@@ -246,6 +256,12 @@ ${actionSections.join('\n\n')}
 
 
 async function updateReferences(thisStep: AnswerAction, allURLs: Record<string, SearchSnippet>) {
+  // 确保thisStep.references存在
+  if (!thisStep.references) {
+    thisStep.references = [];
+    return;
+  }
+  
   thisStep.references = thisStep.references
     ?.filter(ref => ref?.url)
     .map(ref => {
@@ -255,13 +271,13 @@ async function updateReferences(thisStep: AnswerAction, allURLs: Record<string, 
       return {
         ...ref,
         exactQuote: (ref?.exactQuote ||
-          allURLs[normalizedUrl]?.description ||
-          allURLs[normalizedUrl]?.title || '')
+          (allURLs[normalizedUrl]?.description) ||
+          (allURLs[normalizedUrl]?.title) || '')
           .replace(/[^\p{L}\p{N}\s]/gu, ' ')
           .replace(/\s+/g, ' '),
         title: allURLs[normalizedUrl]?.title || '',
         url: normalizedUrl,
-        dateTime: ref?.dateTime || allURLs[normalizedUrl]?.date || '',
+        dateTime: ref?.dateTime || (allURLs[normalizedUrl]?.date) || '',
       };
     })
     .filter(Boolean) as Reference[]; // Add type assertion here
@@ -1150,14 +1166,20 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
     );
 
     answerStep.answer = answer;
-    answerStep.references = references;
+    answerStep.references = references || []; // 确保references不为undefined
     await updateReferences(answerStep, allURLs)
     answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
 
-    if (imageObjects.length && withImages) {
+    if (imageObjects?.length && withImages) {
       try {
         answerStep.imageReferences = await buildImageReferences(answerStep.answer, imageObjects, context, SchemaGen);
-        logDebug('Image references built:', { imageReferences: answerStep.imageReferences.map(i => ({ url: i.url, score: i.relevanceScore, answerChunk: i.answerChunk })) });
+        logDebug('Image references built:', { 
+          imageReferences: answerStep.imageReferences?.map(i => ({ 
+            url: i?.url, 
+            score: i?.relevanceScore, 
+            answerChunk: i?.answerChunk 
+          })) || []
+        });
       } catch (error) {
         logError('Error building image references:', { error });
         answerStep.imageReferences = [];
@@ -1167,23 +1189,23 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
     answerStep.answer = candidateAnswers.join('\n\n'); // await reduceAnswers(candidateAnswers, context, SchemaGen);
     answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
     if (withImages && answerStep.imageReferences?.length) {
-      const sortedImages = answerStep.imageReferences.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
-      logDebug('[agent] all sorted image references:', { count: sortedImages?.length });
+      const sortedImages = answerStep.imageReferences.sort((a, b) => ((b?.relevanceScore || 0) - (a?.relevanceScore || 0)));
+      logDebug('[agent] all sorted image references:', { count: sortedImages?.length || 0 });
       const dedupImages = dedupImagesWithEmbeddings(sortedImages as ImageObject[], []);
       const filteredImages = filterImages(sortedImages, dedupImages);
-      logDebug('[agent] filtered images:', { count: filteredImages.length });
-      answerStep.imageReferences = filteredImages.slice(0, 10); // limit to 10 images
+      logDebug('[agent] filtered images:', { count: filteredImages?.length || 0 });
+      answerStep.imageReferences = filteredImages?.slice(0, 10) || []; // limit to 10 images
     }
   }
 
   // max return 300 urls
-  const returnedURLs = weightedURLs.slice(0, numReturnedURLs).filter(r => r?.url).map(r => r.url);
+  const returnedURLs = weightedURLs?.slice(0, numReturnedURLs)?.filter(r => r?.url)?.map(r => r.url) || [];
   return {
     result: thisStep,
     context,
     visitedURLs: returnedURLs, // deprecated
-    readURLs: visitedURLs.filter(url => !badURLs.includes(url)),
-    allURLs: weightedURLs.map(r => r.url),
+    readURLs: visitedURLs?.filter(url => !badURLs.includes(url)) || [],
+    allURLs: weightedURLs?.map(r => r?.url) || [],
     imageReferences: withImages ? (thisStep as AnswerAction).imageReferences : undefined,
   };
 }

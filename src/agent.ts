@@ -1132,6 +1132,11 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
         answerType: result?.object?.action === 'answer' && result?.object?.answer ? typeof result.object.answer : 'undefined',
         rawAnswer: result?.object?.action === 'answer' ? result.object.answer : null
       });
+       // 添加完整对象内容的日志记录
+      logInfo('Beast mode complete object:', {
+        fullObject: JSON.stringify(result?.object || {}, null, 2)
+      });
+      
       
       // 确保result.object存在且有必要的属性
       if (!result?.object || typeof result.object !== 'object') {
